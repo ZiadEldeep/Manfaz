@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String   @unique
+  phone         String   @unique
+  password      String
+  emailVerified Boolean  @default(false) // Whether the user has verified their email
+  verificationCode String? // Code sent to the user's email for verification
+  createdAt     DateTime @default(now())
+}
