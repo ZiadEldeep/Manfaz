@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const nodemailer = require('nodemailer');
@@ -68,7 +67,7 @@ app.post('/register', async (req, res) => {
         name,
         email,
         phone,
-        password, // Store the password as plain text
+        password, // Store the password as plain text (Not recommended for production)
         verificationCode,  // Store the verification code temporarily
       },
     });
