@@ -84,7 +84,7 @@ const deleteDeliveryDriver = async (req, res) => {
       where: { id },
     });
 
-    res.status(204).send(); // No content
+    res.status(200).json({ message: 'Delivery driver deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
