@@ -11,8 +11,126 @@ model User {
   id               String  @id @default(auto()) @map("_id") @db.ObjectId
   name             String
   email            String  @unique
-  phone            String?  
+  phone            String  @unique
   password         String
   verificationCode Int?
+  createdAt        DateTime @default(now()) 
+  updatedAt        DateTime @updatedAt 
 
+  Worker Worker[]
+
+  DeliveryDriver DeliveryDriver[]
+
+  Order Order[]
+
+  Wallet Wallet[]
 }
+model Category {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  imageUrl    String?
+  status      String     @default("active") // "active", "inactive", "archived"
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now()) 
+  updatedAt   DateTime   @updatedAt 
+  services    Service[]
+}
+
+model Service {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  slug        String     @unique
+  description String?
+  categoryId  String     @db.ObjectId
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  type        String                  // "worker" (عمالة مؤقتة) أو "delivery" (توصيل)
+  price       Float?     // سعر الخدمة (اختياري)
+  duration    Int?       // مدة الخدمة بالساعات (للعمالة المؤقتة)
+  availability Boolean   @default(true) // هل الخدمة متاحة؟
+  imageUrl    String?
+  createdAt   DateTime   @default(now()) 
+  updatedAt   DateTime   @updatedAt 
+
+  Order Order[]
+}
+
+model Worker {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String     @db.ObjectId
+  user        User?      @relation(fields: [userId], references: [id])
+  skills      String[]   // قائمة المهارات
+  experience  Int        // عدد سنوات الخبرة
+  hourlyRate  Float?     // الأجر بالساعة
+  availability Boolean   @default(true)
+  rating      Float      @default(0.0)
+  reviewsCount Int       @default(0)
+  createdAt   DateTime   @default(now()) 
+  updatedAt   DateTime   @updatedAt 
+
+  Order Order[]
+}
+
+model DeliveryDriver {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String     @db.ObjectId
+  user        User?      @relation(fields: [userId], references: [id])
+  vehicleType String?    // نوع المركبة
+  license     String?    // رقم الرخصة
+  availability Boolean   @default(true)
+  rating      Float      @default(0.0)
+  reviewsCount Int       @default(0)
+  completedOrders Int    @default(0) // عدد الطلبات المكتملة
+  earnings    Float      @default(0.0) // الأرباح
+  createdAt   DateTime   @default(now()) 
+  updatedAt   DateTime   @updatedAt 
+
+  Order Order[]
+}
+
+model Order {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String     @db.ObjectId
+  user         User?      @relation(fields: [userId], references: [id])
+  serviceId    String     @db.ObjectId
+  service      Service?   @relation(fields: [serviceId], references: [id])
+  providerId   String     @db.ObjectId // العامل أو السائق
+  provider     Worker?    @relation(fields: [providerId], references: [id])
+  deliveryDriverId String? @db.ObjectId // السائق
+  deliveryDriver DeliveryDriver? @relation(fields: [deliveryDriverId], references: [id])
+  description  String?
+  imageUrl     String?
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  price        Float?
+  duration     Int?
+  status       String     @default("pending") // "pending", "in_progress", "completed", "canceled"
+  totalAmount  Float
+  paymentStatus String    @default("pending") // "pending", "paid", "failed"
+  createdAt    DateTime   @default(now()) 
+  updatedAt    DateTime   @updatedAt 
+}
+
+model Wallet {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String     @db.ObjectId
+  user        User?      @relation(fields: [userId], references: [id])
+  balance     Float      @default(0.0)
+  transactions Transaction[]
+  createdAt   DateTime   @default(now()) 
+  updatedAt   DateTime   @updatedAt 
+}
+
+model Transaction {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  walletId     String     @db.ObjectId
+  wallet       Wallet?    @relation(fields: [walletId], references: [id])
+  type         String     // "deposit" or "withdrawal"
+  amount       Float
+  status       String     @default("pending") // "pending", "completed", "failed"
+  createdAt    DateTime   @default(now()) 
+  updatedAt    DateTime   @updatedAt 
+}
+
