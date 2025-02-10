@@ -24,7 +24,7 @@ const sendConfirmationEmail = async (email, verificationCode) => {
       subject: 'Welcome to Aber - Email Verification',
       text: `Hi there,
       
-      Thank you for joining Aber! 🎉
+      Thank you for joining Manfaz! 🎉
       
       We are excited to have you with us. To complete your registration and verify your email address, please use the following verification code:
       
@@ -37,7 +37,7 @@ If you didn’t sign up for Aber, please disregard this email.
 We’re here to help if you need any assistance. Feel free to reach out to our support team.
 
 Warm regards,  
-The Aber Team  
+The Manfaz Team  
 🚀 Your journey starts here!`,
 };
 require('dotenv').config();
