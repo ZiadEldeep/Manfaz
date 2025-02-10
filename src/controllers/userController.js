@@ -5,15 +5,17 @@ const getAllUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany();
     res.status(200).json({
-      success: true,
+      status: true,
       message: 'Users retrieved successfully',
+      code: 200,
       data: users,
     });
   } catch (error) {
     res.status(500).json({
-      success: false,
-      message: 'Failed to retrieve users',
-      error: error.message,
+      status: false,
+      message: `Failed to retrieve users ${error.message}`,
+      code: 500,
+      data: null,
     });
   }
 };
@@ -28,21 +30,33 @@ const getUserById = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        success: false,
+        status: false,
         message: 'User not found',
+        code: 404,
+        data: null,
       });
     }
 
     res.status(200).json({
-      success: true,
+      status: true,
       message: 'User retrieved successfully',
+      code: 200,
       data: user,
     });
   } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        status: false,
+        message: 'User not found',
+        code: 404,
+        data: null,
+      });
+    }
     res.status(500).json({
-      success: false,
-      message: 'Failed to retrieve user',
-      error: error.message,
+      status: false,
+      message: `Failed to retrieve user ${error.message}`,
+      code: 500,
+      data: null,
     });
   }
 };
@@ -60,21 +74,25 @@ const updateUser = async (req, res) => {
     });
 
     res.status(200).json({
-      success: true,
+      status: true,
       message: 'User updated successfully',
+      code: 200,
       data: updatedUser,
     });
   } catch (error) {
     if (error.code === 'P2025') {
       return res.status(404).json({
-        success: false,
+        status: false,
         message: 'User not found',
+        code: 404,
+        data: null,
       });
     }
     res.status(500).json({
-      success: false,
-      message: 'Failed to update user',
-      error: error.message,
+      status: false,
+      message: `Failed to update user ${error.message}`,
+      code: 500,
+      data: null,
     });
   }
 };
@@ -89,20 +107,25 @@ const deleteUser = async (req, res) => {
     });
 
     res.status(200).json({
-      success: true,
+      status: true,
       message: 'User deleted successfully',
+      code: 200,
+      data: null,
     });
   } catch (error) {
     if (error.code === 'P2025') {
       return res.status(404).json({
-        success: false,
+        status: false,
         message: 'User not found',
+        code: 404,
+        data: null,
       });
     }
     res.status(500).json({
-      success: false,
-      message: 'Failed to delete user',
-      error: error.message,
+      status: false,
+      message: `Failed to delete user ${error.message}`,
+      code: 500,
+      data: null,
     });
   }
 };

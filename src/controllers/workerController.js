@@ -4,9 +4,14 @@ const prisma = require('../prismaClient');
 const getAllWorkers = async (req, res) => {
   try {
     const workers = await prisma.worker.findMany();
-    res.status(200).json(workers);
+    res.status(200).json({
+      status: true,
+      message: 'Workers retrieved successfully',
+      code: 200,
+      data: workers
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 
@@ -15,18 +20,23 @@ const createWorker = async (req, res) => {
   try {
     const { userId, skills, experience, hourlyRate } = req.body;
     if (!userId || !skills || !experience || !hourlyRate) {
-      return res.status(400).json({ error: 'All fields are required' });
+      return res.status(400).json({ status: false, message: 'All fields are required', code: 400, data: null });
     }
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ status: false, message: 'User not found', code: 404, data: null });
     const newWorker = await prisma.worker.create({
       data: { userId, skills, experience, hourlyRate },
     });
-    res.status(201).json(newWorker);
+    res.status(201).json({
+      status: true,
+      message: 'Worker created successfully',
+      code: 201,
+      data: newWorker
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 
@@ -37,10 +47,23 @@ const getWorkerById = async (req, res) => {
     const worker = await prisma.worker.findUnique({
       where: { id },
     });
-    if (!worker) return res.status(404).json({ error: 'Worker not found' });
-    res.status(200).json(worker);
+    if (!worker) return res.status(404).json({ status: false, message: 'Worker not found', code: 404, data: null });
+    res.status(200).json({
+      status: true,
+      message: 'Worker retrieved successfully',
+      code: 200,
+      data: worker
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        status: false,
+        message: 'Worker not found',
+        code: 404,
+        data: null,
+      });
+    }
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 
@@ -53,9 +76,14 @@ const updateWorker = async (req, res) => {
       where: { id },
       data: { skills, experience, hourlyRate },
     });
-    res.status(200).json(updatedWorker);
+    res.status(200).json({
+      status: true,
+      message: 'Worker updated successfully',
+      code: 200,
+      data: updatedWorker
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 
@@ -66,9 +94,22 @@ const deleteWorker = async (req, res) => {
     await prisma.worker.delete({
       where: { id },
     });
-    res.status(200).json({ message: 'Worker deleted successfully' });
+    res.status(200).json({
+      status: true,
+      message: 'Worker deleted successfully',
+      code: 200,
+      data: null
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        status: false,
+        message: 'Worker not found',
+        code: 404,
+        data: null,
+      });
+    }
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 module.exports = { getAllWorkers, createWorker, getWorkerById, updateWorker, deleteWorker };

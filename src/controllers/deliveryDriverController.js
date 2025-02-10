@@ -4,9 +4,14 @@ const prisma = require('../prismaClient');
 const getAllDeliveryDrivers = async (req, res) => {
   try {
     const drivers = await prisma.deliveryDriver.findMany();
-    res.status(200).json(drivers);
+    res.status(200).json({
+      status: true,
+      message: 'Delivery drivers fetched successfully',
+      code: 200,
+      data: drivers
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 
@@ -17,10 +22,15 @@ const getDeliveryDriverById = async (req, res) => {
     const driver = await prisma.deliveryDriver.findUnique({
       where: { id },
     });
-    if (!driver) return res.status(404).json({ error: 'Delivery driver not found' });
-    res.status(200).json(driver);
+    if (!driver) return res.status(404).json({ status: false, message: 'Delivery driver not found', code: 404, data: null });
+    res.status(200).json({
+      status: true,
+      message: 'Delivery driver fetched successfully',
+      code: 200,
+      data: driver
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 
@@ -29,13 +39,13 @@ const createDeliveryDriver = async (req, res) => {
   try {
     const { userId, vehicleType, license, availability } = req.body;
     if (!userId || !vehicleType || !license || !availability) {
-      return res.status(400).json({ error: 'All fields are required' });
+      return res.status(400).json({ status: false, message: 'All fields are required', code: 400, data: null });
     }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ status: false, message: 'User not found', code: 404, data: null });
 
     const newDriver = await prisma.deliveryDriver.create({
       data: {
@@ -46,9 +56,14 @@ const createDeliveryDriver = async (req, res) => {
       },
     });
 
-    res.status(201).json(newDriver);
+    res.status(201).json({
+      status: true,
+      message: 'Delivery driver created successfully',
+      code: 201,
+      data: newDriver
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 
@@ -69,9 +84,14 @@ const updateDeliveryDriver = async (req, res) => {
       },
     });
 
-    res.status(200).json(updatedDriver);
+    res.status(200).json({
+      status: true,
+      message: 'Delivery driver updated successfully',
+      code: 200,
+      data: updatedDriver
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 
@@ -84,9 +104,22 @@ const deleteDeliveryDriver = async (req, res) => {
       where: { id },
     });
 
-    res.status(200).json({ message: 'Delivery driver deleted successfully' });
+    res.status(200).json({
+      status: true,
+      message: 'Delivery driver deleted successfully',
+      code: 200,
+      data: null
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        status: false,
+        message: 'Delivery driver not found',
+        code: 404,
+        data: null,
+      });
+    }
+    res.status(500).json({ status: false, message: error.message, code: 500, data: null });
   }
 };
 
