@@ -3,8 +3,11 @@ const translate = require('translate-google');
 // Get All Categories
 const getAllCategories = async (req, res) => {
   const lang = req.query.lang || 'en'; 
+  const type = req.query.type; 
   try {
-    const categories = await prisma.category.findMany();
+    const categories = await prisma.category.findMany({
+      where: type ? { type } : {  },
+    });
     let message=(await translate('Categories retrieved successfully', { to: lang }));
     let categoriesData=[];
     for (let i = 0; i < categories.length; i++) {

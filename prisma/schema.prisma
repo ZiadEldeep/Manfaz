@@ -31,6 +31,7 @@ model Category {
   slug        String     @unique
   description String?
   imageUrl    String?
+  type        String                  // "worker" (عمالة مؤقتة) أو "delivery" (توصيل)
   status      String     @default("active") // "active", "inactive", "archived"
   sortOrder   Int        @default(0)
   createdAt   DateTime   @default(now()) 
