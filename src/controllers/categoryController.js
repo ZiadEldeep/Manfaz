@@ -4,38 +4,37 @@ const translate = require('translate-google');
 // Get All Categories
 const getAllCategories = async (req, res) => {
   const lang = req.query.lang || 'en'; 
-  const type = req.query.type; // Added type query parameter
+  const type = req.query.type;
+
   try {
     const categories = await prisma.category.findMany({
-      where: type ? { type } : {}, // Filter categories by type if provided
+      where: type ? { type } : {},
     });
 
     let message = await translate('Categories retrieved successfully', { to: lang });
     let categoriesData = [];
 
-    for (let i = 0; i < categories.length; i++) {
-      if (lang == 'en') {
-        categoriesData.push(categories[i]);
+    for (let category of categories) {
+      if (lang === 'en') {
+        categoriesData.push(category);
       } else {
         categoriesData.push({
-          ...categories[i],
-          name: await translate(categories[i].name, { to: lang }),
-          slug: await translate(categories[i].slug, { to: lang }),
-          description: await translate(categories[i].description, { to: lang }),
-          status: await translate(categories[i].status, { to: lang }),
+          ...category,
+          name: await translate(category.name, { to: lang }),
+          slug: await translate(category.slug, { to: lang }),
+          description: await translate(category.description, { to: lang }),
+          status: await translate(category.status, { to: lang }),
+          subName: category.subName ? await translate(category.subName, { to: lang }) : null,
+          info: category.info ? await translate(category.info, { to: lang }) : null,
+          price: category.price,
         });
       }
     }
 
-    res.status(200).json({
-      status: true,
-      message: message,
-      code: 200,
-      data: categoriesData
-    });
+    res.status(200).json({ status: true, message, code: 200, data: categoriesData });
   } catch (error) {
-    let message = await translate(`Internal server error ${error.message}`, { to: lang });
-    res.status(500).json({ status: false, message: message, code: 500, data: null });
+    let message = await translate(`Internal server error: ${error.message}`, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
 
@@ -43,56 +42,35 @@ const getAllCategories = async (req, res) => {
 const createCategory = async (req, res) => {
   const lang = req.query.lang || 'en'; 
   try {
-    const { name, slug, description, status, sortOrder, imageUrl, type } = req.body;
+    const { name, slug, description, status, sortOrder, imageUrl, type, subName, info, price } = req.body;
 
-    // Validate required fields, including the type
     if (!name || !slug || !description || !status || !sortOrder || !type) {
-      let message = await translate('Name, slug, description, status, sortOrder, and type are required', { to: lang });
-      return res.status(400).json({ status: false, message: message, code: 400, data: null });
+      let message = await translate('Missing required fields', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
     }
 
-    // Translate to English
-    let translateName = await translate(name, { to: "en" });
-    let translateSlug = await translate(slug, { to: "en" });
-    let translateDescription = await translate(description, { to: "en" });
-    let translateStatus = await translate(status, { to: "en" });
-
-    // Create category with type
     const newCategory = await prisma.category.create({
       data: { 
-        name: translateName, 
-        slug: translateSlug, 
-        description: translateDescription, 
-        status: translateStatus, 
+        name: await translate(name, { to: "en" }), 
+        slug: await translate(slug, { to: "en" }), 
+        description: await translate(description, { to: "en" }), 
+        status: await translate(status, { to: "en" }), 
         sortOrder, 
         imageUrl, 
-        type // Include the type field
+        type,
+        subName: subName ? await translate(subName, { to: "en" }) : null,
+        info: info ? await translate(info, { to: "en" }) : null,
+        price: price ?? 0,
       },
     });
 
-    // Translate success message
     let message = await translate('Category created successfully', { to: lang });
 
-    // Format response based on language
-    let categoryData = lang == 'en' ? newCategory : {
-      ...newCategory,
-      name: await translate(newCategory.name, { to: lang }),
-      slug: await translate(newCategory.slug, { to: lang }),
-      description: await translate(newCategory.description, { to: lang }),
-      status: await translate(newCategory.status, { to: lang }),
-    };
-
-    // Send response
-    res.status(201).json({
-      status: true,
-      message: message,
-      code: 201,
-      data: categoryData
-    });
+    res.status(201).json({ status: true, message, code: 201, data: newCategory });
 
   } catch (error) {
     let message = await translate(error.message, { to: lang });
-    res.status(500).json({ status: false, message: message, code: 500, data: null });
+    res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
 
@@ -101,65 +79,42 @@ const updateCategory = async (req, res) => {
   const lang = req.query.lang || 'en'; 
   try {
     const { id } = req.params;
-    const { name, slug, description, status, sortOrder, imageUrl, type } = req.body;
-
-    if (!name || !slug || !description || !status || !sortOrder || !type) {
-      let message = await translate('Name, slug, description, status, sortOrder, and type are required', { to: lang });
-      return res.status(400).json({ status: false, message: message, code: 400, data: null });
-    }
+    const { name, slug, description, status, sortOrder, imageUrl, type, subName, info, price } = req.body;
 
     if (!id) {
-      let message = await translate('id is required', { to: lang });
-      return res.status(400).json({ status: false, message: message, code: 400, data: null });
+      let message = await translate('ID is required', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
     }
 
-    const category = await prisma.category.findUnique({
-      where: { id },
-    });
-
+    const category = await prisma.category.findUnique({ where: { id } });
     if (!category) {
       let message = await translate('Category not found', { to: lang });
-      return res.status(404).json({ status: false, message: message, code: 404, data: null });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
     }
-
-    let translateName = await translate(name, { to: "en" });
-    let translateSlug = await translate(slug, { to: "en" });
-    let translateDescription = await translate(description, { to: "en" });
-    let translateStatus = await translate(status, { to: "en" });
 
     const updatedCategory = await prisma.category.update({
       where: { id },
       data: { 
-        name: translateName, 
-        slug: translateSlug, 
-        description: translateDescription, 
-        status: translateStatus, 
+        name: await translate(name, { to: "en" }), 
+        slug: await translate(slug, { to: "en" }), 
+        description: await translate(description, { to: "en" }), 
+        status: await translate(status, { to: "en" }), 
         sortOrder, 
         imageUrl, 
-        type // Include the type field
+        type,
+        subName: subName ? await translate(subName, { to: "en" }) : null,
+        info: info ? await translate(info, { to: "en" }) : null,
+        price: price ?? 0,
       },
     });
 
     let message = await translate('Category updated successfully', { to: lang });
 
-    let categoryData = lang == 'en' ? updatedCategory : {
-      ...updatedCategory,
-      name: await translate(updatedCategory.name, { to: lang }),
-      slug: await translate(updatedCategory.slug, { to: lang }),
-      description: await translate(updatedCategory.description, { to: lang }),
-      status: await translate(updatedCategory.status, { to: lang }),
-    };
-
-    res.status(200).json({
-      status: true,
-      message: message,
-      code: 200,
-      data: categoryData
-    });
+    res.status(200).json({ status: true, message, code: 200, data: updatedCategory });
 
   } catch (error) {
     let message = await translate(error.message, { to: lang });
-    res.status(500).json({ status: false, message: message, code: 500, data: null });
+    res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
 
@@ -168,19 +123,14 @@ const deleteCategory = async (req, res) => {
   const lang = req.query.lang || 'en'; 
   try {
     const { id } = req.params;
-    const category = await prisma.category.delete({
-      where: { id },
-    });
+    await prisma.category.delete({ where: { id } });
+
     let message = await translate('Category deleted successfully', { to: lang });
-    res.status(200).json({
-      status: true,
-      message: message,
-      code: 200,
-      data: null
-    });
+    res.status(200).json({ status: true, message, code: 200, data: null });
+
   } catch (error) {
     let message = await translate(error.message, { to: lang });
-    res.status(500).json({ status: false, message: message, code: 500, data: null });
+    res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
 

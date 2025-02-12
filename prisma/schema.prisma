@@ -28,8 +28,11 @@ model User {
 model Category {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
   name        String     @unique
+  subName     String?    // New field for subName
   slug        String     @unique
   description String?
+  info        String?    // New field for additional information
+  price       Float?     // New field for price
   imageUrl    String?
   type        String                  // "worker" (عمالة مؤقتة) أو "delivery" (توصيل)
   status      String     @default("active") // "active", "inactive", "archived"
@@ -38,6 +41,7 @@ model Category {
   updatedAt   DateTime   @updatedAt 
   services    Service[]
 }
+
 
 model Service {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
