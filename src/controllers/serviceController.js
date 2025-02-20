@@ -3,11 +3,11 @@ const translate = require('translate-google');
 // Get All Services
 const getAllServices = async (req, res) => {
   const lang = req.query.lang || 'en'; 
-  const { type } = req.query; // Get 'type' from query parameters
+  const { type,categoryId } = req.query; // Get 'type' from query parameters
 
   try {
     const services = await prisma.service.findMany({
-      where: type ? { type } : {}, // Add filter if 'type' is provided
+      where: type ? { type,categoryId } : {}, // Add filter if 'type' is provided
     });
     let message=await translate('Services retrieved successfully', { to: lang });
     let data=[];
