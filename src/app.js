@@ -10,8 +10,7 @@ const serviceRoutes = require('./routes/serviceRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const workerRoutes = require('./routes/workerRoutes');
 const deliveryDriverRoutes = require('./routes/deliveryDriverRoutes');
-
-
+const serviceParameterRoutes = require('./routes/serviceParameterRoutes');
 
 const app = express();
 
@@ -27,7 +26,8 @@ app.use('/services', serviceRoutes);
 app.use('/workers', workerRoutes);
 app.use('/delivery-drivers', deliveryDriverRoutes);
 app.use('/orders', orderRoutes);
+app.use('/service-parameters', serviceParameterRoutes);
 
 // Start Server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3003;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
