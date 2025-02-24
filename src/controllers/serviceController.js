@@ -73,6 +73,7 @@ const createService = async (req, res) => {
 
 // Get Service By ID
 const getServiceById = async (req, res) => {
+  const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
     
@@ -82,12 +83,14 @@ const getServiceById = async (req, res) => {
         parameters: true,
       }
     });
-    if (!service) return res.status(404).json({ status: false, message: 'Service not found', code: 404, data: null });
+    let message=await translate('Service retrieved successfully', { to: lang });
+    let data=lang=='en'?service:{...service,name:await translate(service.name, { to: lang }),slug:await translate(service.slug, { to: lang }),description:await translate(service.description, { to: lang })}
+    if (!service) return res.status(404).json({ status: false, message: message, code: 404, data: null });
     res.status(200).json({
             status: true,
-            message: 'Service retrieved successfully',
+            message: message,
             code: 200,
-            data: service
+            data: data
           });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message, code: 500, data: null });
@@ -107,9 +110,9 @@ const updateService = async (req, res) => {
       let message=await translate('Service not found', { to: lang });
        return res.status(404).json({ status: false, message: message, code: 404, data: null });
      }
-      let translateName=await translate(service.name, { to: "en" });
-    let translateSlug=await translate(service.slug, { to: "en" });
-    let translateDescription=await translate(service.description, { to: "en" });
+      let translateName=await translate(name, { to: "en" });
+    let translateSlug=await translate(slug, { to: "en" });
+    let translateDescription=await translate(description, { to: "en" });
     const updatedService = await prisma.service.update({
       where: { id },
       data: { name:translateName, slug:translateSlug, description:translateDescription, categoryId, type, price, duration,imageUrl },
