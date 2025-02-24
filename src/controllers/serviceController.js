@@ -40,7 +40,7 @@ const getAllServices = async (req, res) => {
 const createService = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
-    const { name, slug, description, categoryId, type, price, duration,imageUrl } = req.body;
+    const { name, slug, description, categoryId, type, price, duration,imageUrl,iconUrl } = req.body;
     if (!name || !slug || !description || !categoryId || !type || !price || !duration) {
       const message=await translate('Name, slug, description, category ID, type, price, and duration are required', { to: lang });
       return res.status(400).json({ status: false, message: message, code: 400, data: null });
@@ -56,7 +56,7 @@ const createService = async (req, res) => {
     let translateSlug=await translate(slug, { to: "en" });
     let translateDescription=await translate(description, { to: "en" });
     const newService = await prisma.service.create({
-      data: { name: translateName, slug: translateSlug, description: translateDescription, categoryId, type, price, duration,imageUrl },
+      data: { name: translateName, slug: translateSlug, description: translateDescription, categoryId, type, price, duration,imageUrl,iconUrl },
     });
     const message=await translate('Service created successfully', { to: lang });
     const data=lang=='en'?newService:{...newService,name:await translate(newService.name, { to: lang }),slug:await translate(newService.slug, { to: lang }),description:await translate(newService.description, { to: lang })}
@@ -114,7 +114,7 @@ const updateService = async (req, res) => {
   let lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-    const { name, slug, description, categoryId, type, price, duration,imageUrl } = req.body;
+    const { name, slug, description, categoryId, type, price, duration,imageUrl,iconUrl } = req.body;
     let service=await prisma.service.findUnique({
         where: { id },
       })
@@ -127,7 +127,7 @@ const updateService = async (req, res) => {
     let translateDescription=await translate(description, { to: "en" });
     const updatedService = await prisma.service.update({
       where: { id },
-      data: { name:translateName, slug:translateSlug, description:translateDescription, categoryId, type, price, duration,imageUrl },
+      data: { name:translateName, slug:translateSlug, description:translateDescription, categoryId, type, price, duration,imageUrl,iconUrl },
     });
     let message=await translate('Service updated successfully', { to: lang });
     const data=lang=='en'?updatedService:{...updatedService,name:await translate(updatedService.name, { to: lang }),slug:await translate(updatedService.slug, { to: lang }),description:await translate(updatedService.description, { to: lang })}

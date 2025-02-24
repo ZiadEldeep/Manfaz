@@ -55,6 +55,7 @@ model Service {
   duration    Int?       // مدة الخدمة بالساعات (للعمالة المؤقتة)
   availability Boolean   @default(true) // هل الخدمة متاحة؟
   imageUrl    String?
+  iconUrl    String?
   rating      Float      @default(4.0)  // تقييم الخدمة
   ratingCount Int       @default(0)    // عدد التقييمات
   warranty    Int?                     // فترة الضمان بالأيام
