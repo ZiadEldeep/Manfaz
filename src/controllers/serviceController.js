@@ -84,7 +84,19 @@ const getServiceById = async (req, res) => {
       }
     });
     let message=await translate('Service retrieved successfully', { to: lang });
-    let data=lang=='en'?service:{...service,name:await translate(service.name, { to: lang }),slug:await translate(service.slug, { to: lang }),description:await translate(service.description, { to: lang })}
+    let parameters=[]
+    for (let i = 0; i < service.parameters.length; i++) {
+      if (lang == 'en') {
+        parameters.push(service.parameters[i]);
+      } else {
+        parameters.push({
+          ...service.parameters[i],
+          name: await translate(service.parameters[i].name, { to: lang }),
+          description: service.parameters[i].description ? await translate(service.parameters[i].description, { to: lang }) : null,
+        });
+      }
+    }
+    let data=lang=='en'?service:{...service,name:await translate(service.name, { to: lang }),slug:await translate(service.slug, { to: lang }),description:await translate(service.description, { to: lang }),parameters}
     if (!service) return res.status(404).json({ status: false, message: message, code: 404, data: null });
     res.status(200).json({
             status: true,
