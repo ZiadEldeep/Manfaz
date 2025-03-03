@@ -1,3 +1,4 @@
+const { Prisma } = require('@prisma/client');
 const prisma = require('../prismaClient');
 const translate = require('translate-google');
 
@@ -5,10 +6,22 @@ const translate = require('translate-google');
 const getAllCategories = async (req, res) => {
   const lang = req.query.lang || 'en'; 
   const type = req.query.type;
-
+  const search = req.query.search;
+  const page = req.query.page || 1;
+  const limit = req.query.limit || 10;
+  const skip = (page - 1) * limit;
+  let where = {};
+  if (type) {
+    where.type = type;
+  }
+  if (search) {
+    where.name = { contains: search, mode: Prisma.QueryMode.insensitive };
+  }
   try {
     const categories = await prisma.category.findMany({
-      where: type ? { type } : {},
+      where,
+      skip,
+      take: limit,
     });
 
     const message = await translate('Categories retrieved successfully', { to: lang });
