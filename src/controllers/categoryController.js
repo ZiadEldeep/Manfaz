@@ -21,7 +21,7 @@ const getAllCategories = async (req, res) => {
     const categories = await prisma.category.findMany({
       where,
       skip,
-      limit,
+      take: parseInt(limit),
     });
 
     const message = await translate('Categories retrieved successfully', { to: lang });
