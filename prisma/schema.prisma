@@ -56,6 +56,11 @@ enum ServiceType {
   delivery
 }
 
+enum ServiceSubType {
+  delivery_service
+  delivery_driver
+}
+
 model Service {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
   name        String
@@ -64,7 +69,7 @@ model Service {
   categoryId  String     @db.ObjectId
   category    Category?  @relation(fields: [categoryId], references: [id])
   type        ServiceType                  // "worker" (عمالة مؤقتة) أو "delivery" (توصيل)
-  subType        String?                  // "worker" (عمالة مؤقتة) أو "delivery" (توصيل)
+  subType        ServiceSubType?                  // "worker" (عمالة مؤقتة) أو "delivery" (توصيل)
   price       Float?     // سعر الخدمة (اختياري)
   duration    Int?       // مدة الخدمة بالساعات (للعمالة المؤقتة)
   availability Boolean   @default(true) // هل الخدمة متاحة؟
