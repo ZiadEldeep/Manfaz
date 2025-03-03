@@ -2,6 +2,7 @@ const prisma = require('../prismaClient');
 const { sendConfirmationEmail } = require('../utils/email');
 const { generateVerificationCode } = require('../utils/helpers');
 const translate = require('translate-google');
+const bcrypt = require('bcrypt');
 // Register a new user
 const register = async (req, res) => {
   const lang = req.query.lang || 'en';
@@ -9,8 +10,8 @@ const register = async (req, res) => {
   try {
     const { name, email, phone, password, role } = req.body;
 
-    if (!name || (!email && !phone) || !password || !role) {
-      const message = await translate('Name, password, and either email or phone are required', { to: lang });
+    if (!name || !email || !phone || !password || !role) {
+      const message = await translate('Name, password, email  phone  role are required', { to: lang });
       return res.status(400).json({
         status: false,
         message,
@@ -44,7 +45,7 @@ const register = async (req, res) => {
         name: translatedName, 
         email, 
         phone, 
-        password, 
+        password: hashedPassword,
         verificationCode,
         role 
       },
@@ -107,7 +108,7 @@ const login = async (req, res) => {
 
     const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!user || user.password !== password) {
+    if (!user) {
       const message = await translate('Invalid email or password', { to: lang });
       return res.status(401).json({
         status: false,
@@ -116,7 +117,16 @@ const login = async (req, res) => {
         data: null,
       });
     }
-
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      const message = await translate('Invalid email or password', { to: lang });
+      return res.status(401).json({
+        status: false,
+        message,
+        code: 401,
+        data: null,
+      });
+    }
     const message = await translate('Login successful', { to: lang });
 
     if (lang === 'en') {
