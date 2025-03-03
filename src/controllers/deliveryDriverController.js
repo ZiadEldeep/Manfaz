@@ -1,5 +1,5 @@
 const prisma = require('../prismaClient');
-const translate = require('translate-google');
+const translate = require('@vitalets/google-translate-api');
 
 // Get All Delivery Drivers
 const getAllDeliveryDrivers = async (req, res) => {
