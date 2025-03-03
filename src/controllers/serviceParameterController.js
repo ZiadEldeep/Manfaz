@@ -2,28 +2,19 @@ const prisma = require('../prismaClient');
 const translate = require('translate-google');
 
 // Helper function to translate FAQ array
-async function translateFaqs(faqs, targetLang) {
+async function translateFaqs(faqs, targetLang, toEnglish = false) {
   if (!faqs) return null;
   
-  const translatedFaqs = [];
-  for (const faq of faqs) {
-    translatedFaqs.push({
-      question: await translate(faq.question, { to: targetLang }),
-      answer: await translate(faq.answer, { to: targetLang })
-    });
-  }
-  return translatedFaqs;
+  return Promise.all(faqs.map(async (faq) => ({
+    question: await translate(faq.question, { to: toEnglish ? 'en' : targetLang }),
+    answer: await translate(faq.answer, { to: toEnglish ? 'en' : targetLang })
+  })));
 }
 
 // Helper function to translate whatIncluded array
-async function translateWhatIncluded(items, targetLang) {
+async function translateWhatIncluded(items, targetLang, toEnglish = false) {
   if (!items) return null;
-  
-  const translatedItems = [];
-  for (const item of items) {
-    translatedItems.push(await translate(item, { to: targetLang }));
-  }
-  return translatedItems;
+  return Promise.all(items.map(item => translate(item, { to: toEnglish ? 'en' : targetLang })));
 }
 
 // Get All Service Parameters
@@ -37,32 +28,50 @@ const getAllServiceParameters = async (req, res) => {
       orderBy: { sortOrder: 'asc' }
     });
 
-    let message = await translate('Service parameters retrieved successfully', { to: lang });
-    let data = [];
-    
-    for (let param of parameters) {
-      if (lang === 'en') {
-        data.push(param);
-      } else {
-        data.push({
-          ...param,
-          name: await translate(param.name, { to: lang }),
-          description: param.description ? await translate(param.description, { to: lang }) : null,
-          faqs: param.faqs ? await translateFaqs(param.faqs, lang) : null,
-          whatIncluded: param.whatIncluded ? await translateWhatIncluded(param.whatIncluded, lang) : null
-        });
-      }
+    const message = await translate('Service parameters retrieved successfully', { to: lang });
+
+    if (lang === 'en') {
+      res.status(200).json({
+        status: true,
+        message,
+        code: 200,
+        data: parameters
+      });
+      return;
     }
+
+    // ترجمة جميع البارامترات في وقت واحد
+    const translatedParameters = await Promise.all(parameters.map(async (param) => {
+      const [
+        translatedName,
+        translatedDesc,
+        translatedFaqs,
+        translatedWhatIncluded
+      ] = await Promise.all([
+        translate(param.name, { to: lang }),
+        param.description ? translate(param.description, { to: lang }) : null,
+        param.faqs ? translateFaqs(param.faqs, lang) : null,
+        param.whatIncluded ? translateWhatIncluded(param.whatIncluded, lang) : null
+      ]);
+
+      return {
+        ...param,
+        name: translatedName,
+        description: translatedDesc,
+        faqs: translatedFaqs,
+        whatIncluded: translatedWhatIncluded
+      };
+    }));
 
     res.status(200).json({
       status: true,
-      message: message,
+      message,
       code: 200,
-      data: data
+      data: translatedParameters
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
-    res.status(500).json({ status: false, message: message, code: 500, data: null });
+    res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
 
@@ -88,7 +97,7 @@ const createServiceParameter = async (req, res) => {
 
     if (!name || !price || !serviceId) {
       const message = await translate('Name, price, and service ID are required', { to: lang });
-      return res.status(400).json({ status: false, message: message, code: 400, data: null });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
     }
 
     const service = await prisma.service.findUnique({
@@ -97,38 +106,26 @@ const createServiceParameter = async (req, res) => {
 
     if (!service) {
       const message = await translate('Service not found', { to: lang });
-      return res.status(400).json({ status: false, message: message, code: 400, data: null });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
     }
 
-    // Translate to English for storage
-    let translateName = await translate(name, { to: "en" });
-    let translateDescription = description ? await translate(description, { to: "en" }) : null;
-    
-    // Translate FAQs to English
-    let translatedFaqs = null;
-    if (faqs && Array.isArray(faqs)) {
-      translatedFaqs = [];
-      for (const faq of faqs) {
-        translatedFaqs.push({
-          question: await translate(faq.question, { to: "en" }),
-          answer: await translate(faq.answer, { to: "en" })
-        });
-      }
-    }
-
-    // Translate whatIncluded to English
-    let translatedWhatIncluded = null;
-    if (whatIncluded && Array.isArray(whatIncluded)) {
-      translatedWhatIncluded = [];
-      for (const item of whatIncluded) {
-        translatedWhatIncluded.push(await translate(item, { to: "en" }));
-      }
-    }
+    // ترجمة جميع الحقول النصية إلى الإنجليزية في وقت واحد
+    const [
+      translatedName,
+      translatedDesc,
+      translatedFaqs,
+      translatedWhatIncluded
+    ] = await Promise.all([
+      translate(name, { to: "en" }),
+      description ? translate(description, { to: "en" }) : null,
+      faqs ? translateFaqs(faqs, 'en', true) : null,
+      whatIncluded ? translateWhatIncluded(whatIncluded, 'en', true) : null
+    ]);
 
     const newParameter = await prisma.serviceParameter.create({
       data: {
-        name: translateName,
-        description: translateDescription,
+        name: translatedName,
+        description: translatedDesc,
         imageUrl,
         price,
         warranty,
@@ -136,7 +133,7 @@ const createServiceParameter = async (req, res) => {
         installmentMonths,
         monthlyInstallment,
         serviceId,
-        status,
+        status: status || 'active',
         sortOrder: sortOrder || 0,
         faqs: translatedFaqs,
         whatIncluded: translatedWhatIncluded
@@ -144,23 +141,45 @@ const createServiceParameter = async (req, res) => {
     });
 
     const message = await translate('Service parameter created successfully', { to: lang });
-    const data = lang === 'en' ? newParameter : {
-      ...newParameter,
-      name: await translate(newParameter.name, { to: lang }),
-      description: newParameter.description ? await translate(newParameter.description, { to: lang }) : null,
-      faqs: newParameter.faqs ? await translateFaqs(newParameter.faqs, lang) : null,
-      whatIncluded: newParameter.whatIncluded ? await translateWhatIncluded(newParameter.whatIncluded, lang) : null
-    };
+
+    if (lang === 'en') {
+      res.status(201).json({
+        status: true,
+        message,
+        code: 201,
+        data: newParameter
+      });
+      return;
+    }
+
+    // ترجمة البيانات للغة المطلوبة
+    const [
+      finalName,
+      finalDesc,
+      finalFaqs,
+      finalWhatIncluded
+    ] = await Promise.all([
+      translate(newParameter.name, { to: lang }),
+      newParameter.description ? translate(newParameter.description, { to: lang }) : null,
+      newParameter.faqs ? translateFaqs(newParameter.faqs, lang) : null,
+      newParameter.whatIncluded ? translateWhatIncluded(newParameter.whatIncluded, lang) : null
+    ]);
 
     res.status(201).json({
       status: true,
-      message: message,
+      message,
       code: 201,
-      data: data
+      data: {
+        ...newParameter,
+        name: finalName,
+        description: finalDesc,
+        faqs: finalFaqs,
+        whatIncluded: finalWhatIncluded
+      }
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
-    res.status(500).json({ status: false, message: message, code: 500, data: null });
+    res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
 
@@ -176,27 +195,49 @@ const getServiceParameterById = async (req, res) => {
 
     if (!parameter) {
       const message = await translate('Service parameter not found', { to: lang });
-      return res.status(404).json({ status: false, message: message, code: 404, data: null });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
     }
 
-    const data = lang === 'en' ? parameter : {
-      ...parameter,
-      name: await translate(parameter.name, { to: lang }),
-      description: parameter.description ? await translate(parameter.description, { to: lang }) : null,
-      faqs: parameter.faqs ? await translateFaqs(parameter.faqs, lang) : null,
-      whatIncluded: parameter.whatIncluded ? await translateWhatIncluded(parameter.whatIncluded, lang) : null
-    };
-
     const message = await translate('Service parameter retrieved successfully', { to: lang });
+
+    if (lang === 'en') {
+      res.status(200).json({
+        status: true,
+        message,
+        code: 200,
+        data: parameter
+      });
+      return;
+    }
+
+    // ترجمة جميع البيانات في وقت واحد
+    const [
+      translatedName,
+      translatedDesc,
+      translatedFaqs,
+      translatedWhatIncluded
+    ] = await Promise.all([
+      translate(parameter.name, { to: lang }),
+      parameter.description ? translate(parameter.description, { to: lang }) : null,
+      parameter.faqs ? translateFaqs(parameter.faqs, lang) : null,
+      parameter.whatIncluded ? translateWhatIncluded(parameter.whatIncluded, lang) : null
+    ]);
+
     res.status(200).json({
       status: true,
-      message: message,
+      message,
       code: 200,
-      data: data
+      data: {
+        ...parameter,
+        name: translatedName,
+        description: translatedDesc,
+        faqs: translatedFaqs,
+        whatIncluded: translatedWhatIncluded
+      }
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
-    res.status(500).json({ status: false, message: message, code: 500, data: null });
+    res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
 
@@ -226,70 +267,80 @@ const updateServiceParameter = async (req, res) => {
 
     if (!parameter) {
       const message = await translate('Service parameter not found', { to: lang });
-      return res.status(404).json({ status: false, message: message, code: 404, data: null });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
     }
 
-    // Translate fields to English if they exist
-    let translateName = name ? await translate(name, { to: "en" }) : undefined;
-    let translateDescription = description ? await translate(description, { to: "en" }) : undefined;
-    
-    // Translate FAQs to English if they exist
-    let translatedFaqs = undefined;
-    if (faqs && Array.isArray(faqs)) {
-      translatedFaqs = [];
-      for (const faq of faqs) {
-        translatedFaqs.push({
-          question: await translate(faq.question, { to: "en" }),
-          answer: await translate(faq.answer, { to: "en" })
-        });
-      }
-    }
-
-    // Translate whatIncluded to English if it exists
-    let translatedWhatIncluded = undefined;
-    if (whatIncluded && Array.isArray(whatIncluded)) {
-      translatedWhatIncluded = [];
-      for (const item of whatIncluded) {
-        translatedWhatIncluded.push(await translate(item, { to: "en" }));
-      }
-    }
+    // ترجمة الحقول المحدثة إلى الإنجليزية
+    const [
+      translatedName,
+      translatedDesc,
+      translatedFaqs,
+      translatedWhatIncluded
+    ] = await Promise.all([
+      name ? translate(name, { to: "en" }) : parameter.name,
+      description ? translate(description, { to: "en" }) : parameter.description,
+      faqs ? translateFaqs(faqs, 'en', true) : parameter.faqs,
+      whatIncluded ? translateWhatIncluded(whatIncluded, 'en', true) : parameter.whatIncluded
+    ]);
 
     const updatedParameter = await prisma.serviceParameter.update({
       where: { id },
       data: {
-        name: translateName,
-        description: translateDescription,
-        imageUrl,
-        price,
-        warranty,
-        installmentAvailable,
-        installmentMonths,
-        monthlyInstallment,
-        status,
-        sortOrder,
+        name: translatedName,
+        description: translatedDesc,
+        imageUrl: imageUrl || parameter.imageUrl,
+        price: price || parameter.price,
+        warranty: warranty || parameter.warranty,
+        installmentAvailable: installmentAvailable ?? parameter.installmentAvailable,
+        installmentMonths: installmentMonths || parameter.installmentMonths,
+        monthlyInstallment: monthlyInstallment || parameter.monthlyInstallment,
+        status: status || parameter.status,
+        sortOrder: sortOrder || parameter.sortOrder,
         faqs: translatedFaqs,
         whatIncluded: translatedWhatIncluded
       },
     });
 
     const message = await translate('Service parameter updated successfully', { to: lang });
-    const data = lang === 'en' ? updatedParameter : {
-      ...updatedParameter,
-      name: await translate(updatedParameter.name, { to: lang }),
-      description: updatedParameter.description ? await translate(updatedParameter.description, { to: lang }) : null,
-      faqs: updatedParameter.faqs ? await translateFaqs(updatedParameter.faqs, lang) : null,
-      whatIncluded: updatedParameter.whatIncluded ? await translateWhatIncluded(updatedParameter.whatIncluded, lang) : null
-    };
+
+    if (lang === 'en') {
+      res.status(200).json({
+        status: true,
+        message,
+        code: 200,
+        data: updatedParameter
+      });
+      return;
+    }
+
+    // ترجمة البيانات المحدثة للغة المطلوبة
+    const [
+      finalName,
+      finalDesc,
+      finalFaqs,
+      finalWhatIncluded
+    ] = await Promise.all([
+      translate(updatedParameter.name, { to: lang }),
+      updatedParameter.description ? translate(updatedParameter.description, { to: lang }) : null,
+      updatedParameter.faqs ? translateFaqs(updatedParameter.faqs, lang) : null,
+      updatedParameter.whatIncluded ? translateWhatIncluded(updatedParameter.whatIncluded, lang) : null
+    ]);
 
     res.status(200).json({
       status: true,
-      message: message,
+      message,
       code: 200,
-      data: data
+      data: {
+        ...updatedParameter,
+        name: finalName,
+        description: finalDesc,
+        faqs: finalFaqs,
+        whatIncluded: finalWhatIncluded
+      }
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
-    res.status(500).json({ status: false, message: message, code: 500, data: null });
+    res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
 
@@ -305,7 +356,7 @@ const deleteServiceParameter = async (req, res) => {
 
     if (!parameter) {
       const message = await translate('Service parameter not found', { to: lang });
-      return res.status(404).json({ status: false, message: message, code: 404, data: null });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
     }
 
     await prisma.serviceParameter.delete({
@@ -315,13 +366,13 @@ const deleteServiceParameter = async (req, res) => {
     const message = await translate('Service parameter deleted successfully', { to: lang });
     res.status(200).json({
       status: true,
-      message: message,
+      message,
       code: 200,
       data: null
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
-    res.status(500).json({ status: false, message: message, code: 500, data: null });
+    res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
 
