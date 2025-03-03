@@ -48,6 +48,8 @@ model Category {
   createdAt   DateTime   @default(now()) 
   updatedAt   DateTime   @updatedAt 
   services    Service[]
+
+  Store Store[]
 }
 
 
@@ -212,6 +214,8 @@ model Store {
   phone       String?    // رقم الهاتف
   email       String?    // البريد الإلكتروني
   workingHours Json?     // ساعات العمل
+  categoryId   String?    @db.ObjectId
+  category     Category?  @relation(fields: [categoryId], references: [id])
   rating      Float      @default(0.0)  // التقييم
   reviewsCount Int       @default(0)    // عدد التقييمات
   isActive    Boolean    @default(true) // حالة المتجر

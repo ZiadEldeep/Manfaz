@@ -93,6 +93,7 @@ const login = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     // التحقق من وجود إما البريد الإلكتروني أو رقم الهاتف
+    const { email, password, phone,role } = req.body;
     let whereCondition;
     if (email) {
       whereCondition = { email };
@@ -102,7 +103,6 @@ const login = async (req, res) => {
 
     // إضافة الدور إلى شروط البحث
     whereCondition.role = role;
-    const { email, password, phone,role } = req.body;
 
     if ((!email && !phone) || !password || !role) {
       const message = await translate('Email or phone and password and role are required', { to: lang });
