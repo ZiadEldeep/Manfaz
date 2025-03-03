@@ -83,12 +83,16 @@ const createCategory = async (req, res) => {
   try {
     const { name, slug, description, status, sortOrder, imageUrl, type, subName, info, price,subType } = req.body;
 
-    if (!name || !slug || !description || !status || !sortOrder || !type || !subType) {
+    if (!name || !slug || !description || !status || !sortOrder || !type ) {
       const message = await translate('Missing required fields', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-
-    // ترجمة جميع الحقول النصية إلى الإنجليزية في وقت واحد
+    if(type === 'delivery'){
+      if(!subType){
+        const message = await translate('Sub type is required', { to: lang });
+        return res.status(400).json({ status: false, message, code: 400, data: null });
+      }
+    }
     const [
       translatedName,
       translatedSlug,
