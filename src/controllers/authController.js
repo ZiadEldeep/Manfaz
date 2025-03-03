@@ -92,6 +92,16 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
+    // التحقق من وجود إما البريد الإلكتروني أو رقم الهاتف
+    let whereCondition;
+    if (email) {
+      whereCondition = { email };
+    } else if (phone) {
+      whereCondition = { phone };
+    }
+
+    // إضافة الدور إلى شروط البحث
+    whereCondition.role = role;
     const { email, password, phone,role } = req.body;
 
     if ((!email && !phone) || !password || !role) {
@@ -104,7 +114,7 @@ const login = async (req, res) => {
       });
     }
 
-    const user = await prisma.user.findUnique({ where: { OR: [{ email }, { phone }], role } });
+    const user = await prisma.user.findUnique({ where: whereCondition });
 
     if (!user) {
       const message = await translate('Invalid email or phone or password or role', { to: lang });

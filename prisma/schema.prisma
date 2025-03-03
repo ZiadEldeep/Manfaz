@@ -174,6 +174,8 @@ model Order {
   paymentStatus String    @default("pending") // "pending", "paid", "failed"
   createdAt    DateTime   @default(now()) 
   updatedAt    DateTime   @updatedAt 
+  storeId      String?    @db.ObjectId  // إضافة هذا الحقل
+  store        Store?     @relation(fields: [storeId], references: [id])
 }
 
 model Wallet {
@@ -195,4 +197,44 @@ model Transaction {
   status       String     @default("pending") // "pending", "completed", "failed"
   createdAt    DateTime   @default(now()) 
   updatedAt    DateTime   @updatedAt 
+}
+
+model Store {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String     // اسم المتجر/المطعم
+  description String?    // وصف المتجر
+  type        String     // نوع المتجر (مطعم، سوبر ماركت، صيدلية، الخ)
+  logo        String?    // شعار المتجر
+  coverImage  String?    // صورة الغلاف
+  address     String     // عنوان المتجر
+  latitude    Float?     // خط العرض
+  longitude   Float?     // خط الطول
+  phone       String?    // رقم الهاتف
+  email       String?    // البريد الإلكتروني
+  workingHours Json?     // ساعات العمل
+  rating      Float      @default(0.0)  // التقييم
+  reviewsCount Int       @default(0)    // عدد التقييمات
+  isActive    Boolean    @default(true) // حالة المتجر
+  status      String     @default("active") // "active", "inactive", "closed"
+  
+  products    Product[]  // المنتجات
+  orders      Order[]    // الطلبات
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Product {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String     // اسم المنتج
+  description String?    // وصف المنتج
+  price       Float      // السعر
+  images      String[]   // صور المنتج
+  category    String?    // تصنيف المنتج
+  isAvailable Boolean    @default(true) // متوفر/غير متوفر
+  storeId     String     @db.ObjectId
+  store       Store      @relation(fields: [storeId], references: [id])
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
