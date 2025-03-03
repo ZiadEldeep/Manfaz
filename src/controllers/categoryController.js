@@ -81,9 +81,9 @@ const getAllCategories = async (req, res) => {
 const createCategory = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
-    const { name, slug, description, status, sortOrder, imageUrl, type, subName, info, price } = req.body;
+    const { name, slug, description, status, sortOrder, imageUrl, type, subName, info, price,subType } = req.body;
 
-    if (!name || !slug || !description || !status || !sortOrder || !type) {
+    if (!name || !slug || !description || !status || !sortOrder || !type || !subType) {
       const message = await translate('Missing required fields', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
@@ -114,6 +114,7 @@ const createCategory = async (req, res) => {
         sortOrder,
         imageUrl,
         type,
+        subType,
         subName: translatedSubName,
         info: translatedInfo,
         price: price ?? 0,
