@@ -92,10 +92,10 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
-    const { email, password } = req.body;
+    const { email, password, phone,role } = req.body;
 
-    if (!email || !password) {
-      const message = await translate('Email and password are required', { to: lang });
+    if ((!email && !phone) || !password || !role) {
+      const message = await translate('Email or phone and password and role are required', { to: lang });
       return res.status(400).json({
         status: false,
         message,
@@ -104,10 +104,10 @@ const login = async (req, res) => {
       });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { OR: [{ email }, { phone }], role } });
 
     if (!user) {
-      const message = await translate('Invalid email or password', { to: lang });
+      const message = await translate('Invalid email or phone or password or role', { to: lang });
       return res.status(401).json({
         status: false,
         message,
@@ -117,7 +117,7 @@ const login = async (req, res) => {
     }
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      const message = await translate('Invalid email or password', { to: lang });
+      const message = await translate('Invalid email or phone or password or role', { to: lang });
       return res.status(401).json({
         status: false,
         message,
