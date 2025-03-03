@@ -203,14 +203,14 @@ model Transaction {
 
 model Store {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  name        String     // اسم المتجر/المطعم
+  name        String     // اسم المتجر
   description String?    // وصف المتجر
-  type        String     // نوع المتجر (مطعم، سوبر ماركت، صيدلية، الخ)
+  type        String     // التصنيف الرئيسي (مثل: مأكولات ومشروبات)
   logo        String?    // شعار المتجر
   coverImage  String?    // صورة الغلاف
+  images      String[]   // صور إضافية للمتجر
   address     String     // عنوان المتجر
-  latitude    Float?     // خط العرض
-  longitude   Float?     // خط الطول
+  locations   StoreLocation[] // فروع المتجر
   phone       String?    // رقم الهاتف
   email       String?    // البريد الإلكتروني
   workingHours Json?     // ساعات العمل
@@ -220,9 +220,45 @@ model Store {
   reviewsCount Int       @default(0)    // عدد التقييمات
   isActive    Boolean    @default(true) // حالة المتجر
   status      String     @default("active") // "active", "inactive", "closed"
+  minOrderAmount Float?  // الحد الأدنى للطلب
+  deliveryFee   Float?  // رسوم التوصيل
   
-  products    Product[]  // المنتجات
-  orders      Order[]    // الطلبات
+  categories  StoreCategory[] // تصنيفات المتجر الداخلية
+  products    Product[]      // المنتجات
+  offers      StoreOffer[]   // العروض
+  orders      Order[]        // الطلبات
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model StoreLocation {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  storeId     String     @db.ObjectId
+  store       Store      @relation(fields: [storeId], references: [id])
+  name        String     // اسم الفرع
+  address     String     // عنوان الفرع
+  latitude    Float      // خط العرض
+  longitude   Float      // خط الطول
+  phone       String?    // رقم الهاتف
+  isActive    Boolean    @default(true)
+  workingHours Json?     // ساعات العمل
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model StoreCategory {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  storeId     String     @db.ObjectId
+  store       Store      @relation(fields: [storeId], references: [id])
+  name        String     // اسم التصنيف (مثل: برجر، فرايد تشيكن)
+  description String?    // وصف التصنيف
+  image       String?    // صورة التصنيف
+  isActive    Boolean    @default(true)
+  sortOrder   Int        @default(0)
+  
+  products    Product[]  // المنتجات في هذا التصنيف
   
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -232,12 +268,33 @@ model Product {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
   name        String     // اسم المنتج
   description String?    // وصف المنتج
-  price       Float      // السعر
+  price       Float      // السعر الأساسي
+  salePrice   Float?     // سعر العرض (إن وجد)
   images      String[]   // صور المنتج
-  category    String?    // تصنيف المنتج
-  isAvailable Boolean    @default(true) // متوفر/غير متوفر
   storeId     String     @db.ObjectId
   store       Store      @relation(fields: [storeId], references: [id])
+  categoryId  String     @db.ObjectId
+  category    StoreCategory @relation(fields: [categoryId], references: [id])
+  isAvailable Boolean    @default(true)
+  ingredients String[]   // المكونات
+  extras      Json?      // إضافات اختيارية (مثل: حجم إضافي، إضافات خاصة)
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model StoreOffer {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  storeId     String     @db.ObjectId
+  store       Store      @relation(fields: [storeId], references: [id])
+  name        String     // اسم العرض
+  description String?    // وصف العرض
+  type        String     // نوع العرض (مثل: عروض رمضان، عروض اللمة)
+  image       String?    // صورة العرض
+  startDate   DateTime?  // تاريخ بداية العرض
+  endDate     DateTime?  // تاريخ نهاية العرض
+  discount    Float?     // قيمة الخصم
+  isActive    Boolean    @default(true)
   
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
