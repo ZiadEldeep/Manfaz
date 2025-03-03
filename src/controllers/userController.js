@@ -74,7 +74,7 @@ const updateUser = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-    const { name, email, phone, password, verificationCode } = req.body;
+    const { name, email, phone, password, verificationCode, imageUrl } = req.body;
     if (!id) {
       let message=await translate('id is required', { to: lang });
       return res.status(400).json({ status: false, message: message, code: 400, data: null });
@@ -88,7 +88,7 @@ const updateUser = async (req, res) => {
      }
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: { name, email, phone, password, verificationCode },
+      data: { name, email, phone, password, verificationCode,imageUrl },
     });
     let message=await translate('User updated successfully', { to: lang });
     res.status(200).json({
