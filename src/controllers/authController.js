@@ -4,11 +4,12 @@ const { generateVerificationCode } = require('../utils/helpers');
 const translate = require('translate-google');
 // Register a new user
 const register = async (req, res) => {
+  const lang = req.query.lang || 'en';
 
   try {
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, password ,role} = req.body;
 
-    if (!name || (!email && !phone) || !password) {
+    if (!name || (!email && !phone) || !password || !role) {
       const message=(await translate('Name, password, and either email or phone are required', { to: lang }));
       return res.status(400).json({
         status: false,
@@ -37,7 +38,7 @@ const register = async (req, res) => {
     const verificationCode = generateVerificationCode();
 
     const newUser = await prisma.user.create({
-      data: { name, email, phone, password, verificationCode },
+      data: { name, email, phone, password, verificationCode,role },
     });
 
     if (email) await sendConfirmationEmail(email, verificationCode);
