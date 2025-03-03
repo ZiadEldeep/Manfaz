@@ -37,7 +37,7 @@ const register = async (req, res) => {
     }
 
     const verificationCode = generateVerificationCode();
-
+    const hashedPassword = await bcrypt.hash(password, 10);
     const translatedName = await translate(name, { to: 'en' });
 
     const newUser = await prisma.user.create({
