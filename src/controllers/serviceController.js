@@ -8,6 +8,9 @@ const getAllServices = async (req, res) => {
   try {
     const services = await prisma.service.findMany({
       where: type ? { type, categoryId } : {},
+      include: {
+        category: true,
+      },
     });
 
     const message = await translate('Services retrieved successfully', { to: lang });
@@ -28,12 +31,14 @@ const getAllServices = async (req, res) => {
         translatedName,
         translatedSlug,
         translatedDesc,
-        translatedSubType
+        translatedSubType,
+        translatedCategoryName
       ] = await Promise.all([
         translate(service.name, { to: lang }),
         translate(service.slug, { to: lang }),
         service.description ? translate(service.description, { to: lang }) : null,
-        service.subType ? translate(service.subType, { to: lang }) : null
+        service.subType ? translate(service.subType, { to: lang }) : null,
+        service.category ? translate(service.category.name, { to: lang }) : null
       ]);
 
       return {
@@ -41,7 +46,11 @@ const getAllServices = async (req, res) => {
         name: translatedName,
         slug: translatedSlug,
         description: translatedDesc,
-        subType: translatedSubType
+        subType: translatedSubType,
+        category: service.category ? {
+          ...service.category,
+          name: translatedCategoryName
+        } : null
       };
     }));
 
