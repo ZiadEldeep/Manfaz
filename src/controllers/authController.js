@@ -67,7 +67,6 @@ const register = async (req, res) => {
       return;
     }
 
-    const translatedUserName = await translate(newUser.name, { to: lang });
 
     res.status(201).json({
       status: true,
@@ -75,7 +74,6 @@ const register = async (req, res) => {
       code: 201,
       data: {
         ...newUser,
-        name: translatedUserName,
       },
     });
   } catch (error) {
@@ -139,7 +137,6 @@ const login = async (req, res) => {
       return;
     }
 
-    const translatedName = await translate(user.name, { to: lang });
 
     res.status(200).json({
       status: true,
@@ -147,7 +144,6 @@ const login = async (req, res) => {
       code: 200,
       data: {
         ...user,
-        name: translatedName,
       },
     });
   } catch (error) {
