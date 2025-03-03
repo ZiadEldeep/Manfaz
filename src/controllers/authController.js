@@ -1,8 +1,7 @@
 const prisma = require('../prismaClient');
 const { sendConfirmationEmail } = require('../utils/email');
 const { generateVerificationCode } = require('../utils/helpers');
-const translate = require('@vitalets/google-translate-api');
-const bcrypt = require('bcrypt');
+const translate = require('translate-google');
 // Register a new user
 const register = async (req, res) => {
   const lang = req.query.lang || 'en';
@@ -35,7 +34,7 @@ const register = async (req, res) => {
         data: null,
       });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
+
     const verificationCode = generateVerificationCode();
 
     const translatedName = await translate(name, { to: 'en' });
@@ -45,7 +44,7 @@ const register = async (req, res) => {
         name: translatedName, 
         email, 
         phone, 
-        password: hashedPassword,
+        password, 
         verificationCode,
         role 
       },
@@ -108,7 +107,7 @@ const login = async (req, res) => {
 
     const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!user) {
+    if (!user || user.password !== password) {
       const message = await translate('Invalid email or password', { to: lang });
       return res.status(401).json({
         status: false,
@@ -117,16 +116,7 @@ const login = async (req, res) => {
         data: null,
       });
     }
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      const message = await translate('Invalid email or password', { to: lang });
-      return res.status(401).json({
-        status: false,
-        message,
-        code: 401,
-        data: null,
-      });
-    }
+
     const message = await translate('Login successful', { to: lang });
 
     if (lang === 'en') {

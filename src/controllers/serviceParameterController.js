@@ -1,5 +1,5 @@
 const prisma = require('../prismaClient');
-const translate = require('@vitalets/google-translate-api');
+const translate = require('translate-google');
 
 // Helper function to translate FAQ array
 async function translateFaqs(faqs, targetLang, toEnglish = false) {

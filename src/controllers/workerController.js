@@ -1,5 +1,5 @@
 const prisma = require('../prismaClient');
-const translate = require('@vitalets/google-translate-api');
+const translate = require('translate-google');
 // Get All Workers
 const getAllWorkers = async (req, res) => {
   const lang = req.query.lang || 'en';

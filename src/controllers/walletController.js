@@ -1,5 +1,5 @@
 const prisma = require('../prismaClient');
-const translate = require('@vitalets/google-translate-api');
+const translate = require('translate-google');
 
 // Get All Wallets
 const getAllWallets = async (req, res) => {
