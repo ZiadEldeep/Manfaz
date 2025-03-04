@@ -18,7 +18,7 @@ const getAllStores = async (req, res) => {
         locations: true,
         workingHours: true
       },
-      where: {...searchQuery,categories:{some:{id:categoryId}}},
+      where:categoryId?.length > 0 ? {...searchQuery,categories:{some:{id:categoryId}}} : {...searchQuery},
       skip: offset,
       take: +limit
     });
