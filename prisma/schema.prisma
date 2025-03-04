@@ -253,7 +253,6 @@ model StoreLocation {
   longitude   Float      // خط الطول
   phone       String?    // رقم الهاتف
   isActive    Boolean    @default(true)
-  workingHours Json?     // ساعات العمل
   
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt

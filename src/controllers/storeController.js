@@ -459,11 +459,11 @@ const createStoreLocation = async (req, res) => {
       const message = await translate('Location name and address are required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-
+    let [translateName,translateAddress] = await Promise.all([translate(name,{to:"en"}),translate(address,{to:"en"})]);
     const location = await prisma.storeLocation.create({
       data: {
-        name,
-        address,
+        name:translateName,
+        address:translateAddress,
         latitude,
         longitude,
         phone,
