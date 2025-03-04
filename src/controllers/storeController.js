@@ -56,7 +56,7 @@ const createStore = async (req, res) => {
       const message = await translate('Category not found', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let {translateName,translateDescription,translateType,translateAddress} = await translate([name,description,type,address],{to:"en"});
+    let {translateName,translateDescription,translateType,translateAddress} =  await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"}),translate(type,{to:"en"}),translate(address,{to:"en"})]);
     const store = await prisma.store.create({
       data: {
         name:translateName,
