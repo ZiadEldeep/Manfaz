@@ -93,7 +93,7 @@ const login = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     // التحقق من وجود إما البريد الإلكتروني أو رقم الهاتف
-    const { email, password, phone,role,token } = req.body;
+    const { email, password, phone,role,isVerified } = req.body;
     let whereCondition;
     if (email) {
       whereCondition = { email };
@@ -125,7 +125,7 @@ const login = async (req, res) => {
         data: null,
       });
     }
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const passwordMatch = isVerified ? password === user.password : await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       const message = await translate('Invalid email or phone or password or role', { to: lang });
       return res.status(401).json({
