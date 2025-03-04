@@ -179,12 +179,18 @@ const updateCategory = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-    const { name, slug, description, status, sortOrder, imageUrl, type, subName, info, price } = req.body;
+    const { name, slug, description, status, sortOrder, imageUrl, type, subName, info, price, subType } = req.body;
 
     const category = await prisma.category.findUnique({ where: { id } });
     if (!category) {
       const message = await translate('Category not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+
+    // التحقق من subType إذا كان النوع delivery
+    if (type === 'delivery' && !subType) {
+      const message = await translate('Sub type is required for delivery category', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
     }
 
     // ترجمة الحقول المحدثة إلى الإنجليزية
@@ -214,6 +220,7 @@ const updateCategory = async (req, res) => {
         sortOrder: sortOrder || category.sortOrder,
         imageUrl: imageUrl || category.imageUrl,
         type: type || category.type,
+        subType: subType || category.subType,
         subName: translatedSubName,
         info: translatedInfo,
         price: price ?? category.price,
