@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { translate } = require('../utils/translate');
+const { translate } = require('translate-google');
 
 // إنشاء بطاقة هدايا جديدة
 const createGiftCard = async (req, res) => {
