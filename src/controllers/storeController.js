@@ -42,11 +42,17 @@ const createStore = async (req, res) => {
       email,
       workingHours,
       minOrderAmount,
-      deliveryFee
+      deliveryFee,
+      categoryId
     } = req.body;
 
-    if (!name || !type || !address) {
+    if (!name || !type || !address || !categoryId) {
       const message = await translate('Name, type and address are required', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+    let category=await prisma.category.findUnique({where:{id:categoryId}});
+    if(!category){
+      const message = await translate('Category not found', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
     let {translateName,translateDescription,translateType,translateAddress} = await translate([name,description,type,address],{to:"en"});
