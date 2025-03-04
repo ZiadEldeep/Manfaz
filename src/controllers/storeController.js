@@ -9,6 +9,7 @@ const getAllStores = async (req, res) => {
       include: {
         categories: true,
         locations: true,
+        workingHours: true
       }
     });
 
