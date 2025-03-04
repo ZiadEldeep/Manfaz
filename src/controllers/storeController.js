@@ -10,8 +10,8 @@ const getAllStores = async (req, res) => {
   let search = req.query.search || '';
   let categoryId = req.query.categoryId || '';
   try {
-    let searchTranslated = await translate(search, { to: lang });
-    let searchQuery = {OR:[{name:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{description:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{type:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{address:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}}]}
+    let searchTranslated = search ? await translate(search, { to: lang }) : '';
+    let searchQuery =search ? {OR:[{name:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{description:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{type:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{address:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}}]} : {};
     const stores = await prisma.store.findMany({
       include: {
         categories: true,
