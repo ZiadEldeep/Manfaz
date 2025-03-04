@@ -277,5 +277,66 @@ const resendVerificationCode = async (req, res) => {
     });
   }
 };
+const verifyAccount = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  try {
+    const { id, verificationCode } = req.body;
 
-module.exports = { register, login, changePassword, resendVerificationCode };
+    if (!id || !verificationCode) {
+      const message = await translate('Id and verification code are required', { to: lang });
+      return res.status(400).json({
+        status: false,
+        message,  
+        code: 400,
+        data: null
+      });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id } }); 
+
+    if (!user) {
+      const message = await translate('User not found', { to: lang });
+      return res.status(404).json({
+        status: false,
+        message,
+        code: 404,
+        data: null
+      });
+    }
+
+    if (+user.verificationCode !== +verificationCode) {
+      const message = await translate('Invalid verification code', { to: lang });
+      return res.status(400).json({
+        status: false,
+        message,
+        code: 400,
+        data: null
+      });
+    }
+
+    await prisma.user.update({
+      where: { id },
+      data: { isVerified: true }
+    });
+
+    const message = await translate('Account verified successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: null
+    });
+  } catch (error) {
+    const message = await translate(`Internal server error: ${error.message}`, { to: lang });
+    console.error('❌ Error verifying account:', error);
+    res.status(500).json({
+      status: false,
+      message,
+      code: 500,
+      data: null
+    });
+  }
+};
+    
+
+module.exports = { register, login, changePassword, resendVerificationCode, verifyAccount };

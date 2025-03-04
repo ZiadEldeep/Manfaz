@@ -15,6 +15,7 @@ model User {
   password         String
   imageUrl         String?
   token            String?
+  isVerified       Boolean @default(false)
   role             UserRole @default(user) // "user", "admin", "superadmin"
   verificationCode Int?
   createdAt        DateTime? @default(now()) 
