@@ -8,7 +8,7 @@ const register = async (req, res) => {
   const lang = req.query.lang || 'en';
 
   try {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role ,token} = req.body;
 
     if (!name || !email || !phone || !password || !role) {
       const message = await translate('Name, password, email  phone  role are required', { to: lang });
@@ -46,6 +46,7 @@ const register = async (req, res) => {
         phone, 
         password: hashedPassword,
         verificationCode,
+        token,
         role 
       },
     });
@@ -92,7 +93,7 @@ const login = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     // التحقق من وجود إما البريد الإلكتروني أو رقم الهاتف
-    const { email, password, phone,role } = req.body;
+    const { email, password, phone,role,token } = req.body;
     let whereCondition;
     if (email) {
       whereCondition = { email };
@@ -218,5 +219,63 @@ const changePassword = async (req, res) => {
     });
   }
 };
+const resendVerificationCode = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  try {
+    const { id } = req.body;
 
-module.exports = { register, login, changePassword };
+    if (!id) {
+      const message = await translate('Id is required', { to: lang });
+      return res.status(400).json({
+        status: false,
+        message,
+        code: 400,
+        data: null
+      });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      const message = await translate('User not found', { to: lang });
+      return res.status(404).json({
+        status: false,
+        message,
+        code: 404,
+        data: null
+      });
+    }
+
+    // Generate new verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000);
+
+    // Update user with new code
+    await prisma.user.update({
+      where: { id },
+      data: { verificationCode }
+    });
+
+    // Send verification email
+    await sendConfirmationEmail(user.email, verificationCode);
+
+    const message = await translate('Verification code resent successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: null
+    });
+
+  } catch (error) {
+    const message = await translate(`Internal server error: ${error.message}`, { to: lang });
+    console.error('❌ Error resending verification code:', error);
+    res.status(500).json({
+      status: false, 
+      message,
+      code: 500,
+      data: null
+    });
+  }
+};
+
+module.exports = { register, login, changePassword, resendVerificationCode };

@@ -17,7 +17,7 @@ const isTimeInRange = (currentTime, openTime, closeTime) => {
 
 // الحصول على مواعيد عمل المتجر
 const getStoreWorkingHours = async (req, res) => {
-  const lang = req.query.lang || 'ar';
+  const lang = req.query.lang || 'en';
   try {
     const { storeId } = req.params;
 
@@ -55,7 +55,7 @@ const getStoreWorkingHours = async (req, res) => {
 
 // تعيين مواعيد عمل المتجر
 const setStoreWorkingHours = async (req, res) => {
-  const lang = req.query.lang || 'ar';
+  const lang = req.query.lang || 'en';
   try {
     const { storeId } = req.params;
     const { workingHours } = req.body;
@@ -106,7 +106,7 @@ const setStoreWorkingHours = async (req, res) => {
 
 // تحديث مواعيد يوم محدد
 const updateWorkingHours = async (req, res) => {
-  const lang = req.query.lang || 'ar';
+  const lang = req.query.lang || 'en';
   try {
     const { storeId, dayOfWeek } = req.params;
     const updateData = req.body;
@@ -135,7 +135,7 @@ const updateWorkingHours = async (req, res) => {
 
 // إضافة يوم خاص
 const addSpecialDay = async (req, res) => {
-  const lang = req.query.lang || 'ar';
+    const lang = req.query.lang || 'en';
   try {
     const { storeId } = req.params;
     const {
@@ -178,7 +178,7 @@ const addSpecialDay = async (req, res) => {
 
 // التحقق من حالة المتجر (مفتوح/مغلق)
 const checkStoreOpen = async (req, res) => {
-  const lang = req.query.lang || 'ar';
+  const lang = req.query.lang || 'en';
   try {
     const { storeId } = req.params;
     const now = new Date();
@@ -262,7 +262,7 @@ const checkStoreOpen = async (req, res) => {
 };
 // حذف يوم خاص
 const deleteSpecialDay = async (req, res) => {
-  const lang = req.query.lang || 'ar';
+    const lang = req.query.lang || 'en';
   try {
     const { storeId, id } = req.params;
 

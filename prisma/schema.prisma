@@ -14,6 +14,7 @@ model User {
   phone            String  @unique
   password         String
   imageUrl         String?
+  token            String?
   role             UserRole @default(user) // "user", "admin", "superadmin"
   verificationCode Int?
   createdAt        DateTime? @default(now()) 
@@ -31,10 +32,8 @@ model User {
 }
 enum UserRole {
   user
-  admin
   store
   worker
-  superadmin
 }
 model Category {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId

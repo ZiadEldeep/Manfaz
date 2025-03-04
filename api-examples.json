@@ -212,6 +212,37 @@
             }
         }
     },
+    "storeLocations": {
+        "getLocations": {
+            "method": "GET",
+            "url": "/api/stores/:storeId/locations",
+            "response": {
+                "locations": [
+                    {
+                        "id": "location_id1",
+                        "name": "الفرع الرئيسي",
+                        "address": "شارع الملك فهد، الرياض",
+                        "latitude": 24.7136,
+                        "longitude": 46.6753,
+                        "phone": "0501234567",
+                        "isActive": true
+                    }
+                ]
+            }
+        },
+        "createLocation": {
+            "method": "POST",
+            "url": "/api/stores/:storeId/locations",
+            "body": {
+                "name": "الفرع الجديد",
+                "address": "شارع التحلية، جدة",
+                "latitude": 21.5433,
+                "longitude": 39.1728,
+                "phone": "0507654321",
+                "isActive": true
+            }
+        }
+    },
     "discountsAndCoupons": {
         "createDiscount": {
             "method": "POST",
