@@ -260,6 +260,34 @@ const checkStoreOpen = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
+// حذف يوم خاص
+const deleteSpecialDay = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { storeId, id } = req.params;
+
+    await prisma.storeWorkingHours.delete({
+      where: {
+        id: parseInt(id),
+        storeId: parseInt(storeId),
+        isSpecialDay: true
+      }
+    });
+
+    const message = await translate('Special day deleted successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: null
+    });
+
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
 
 module.exports = {
   getStoreWorkingHours,

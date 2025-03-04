@@ -236,6 +236,99 @@ const getRewards = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
+// استبدال المكافأة
+const redeemReward = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    // التحقق من وجود المكافأة
+    const reward = await prisma.reward.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!reward) {
+      const message = await translate('Reward not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+
+    // التحقق من نقاط المستخدم
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || user.points < reward.pointsCost) {
+      const message = await translate('Insufficient points', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    // إنشاء سجل استبدال المكافأة وتحديث نقاط المستخدم
+    const [redemption, updatedUser] = await prisma.$transaction([
+      prisma.rewardRedemption.create({
+        data: {
+          userId,
+          rewardId: parseInt(id),
+          pointsUsed: reward.pointsCost
+        }
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          points: {
+            decrement: reward.pointsCost
+          }
+        }
+      })
+    ]);
+
+    const message = await translate('Reward redeemed successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
+        redemption,
+        remainingPoints: updatedUser.points
+      }
+    });
+
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// الحصول على مكافآت المستخدم
+const getUserRewards = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { userId } = req.params;
+
+    const userRewards = await prisma.rewardRedemption.findMany({
+      where: { userId },
+      include: {
+        reward: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    const message = await translate('User rewards retrieved successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: userRewards
+    });
+    
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
 
 module.exports = {
   createGiftCard,
