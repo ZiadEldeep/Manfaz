@@ -168,8 +168,37 @@
                         "isOpen": true,
                         "openTime": "09:00",
                         "closeTime": "22:00"
+                    },
+                    {
+                        "dayOfWeek": 2,
+                        "isOpen": true,
+                        "openTime": "09:00",
+                        "closeTime": "22:00"
+                    },
+                    {
+                        "dayOfWeek": 3,
+                        "isOpen": true,
+                        "openTime": "09:00",
+                        "closeTime": "22:00"
+                    },
+                    {
+                        "dayOfWeek": 4,
+                        "isOpen": true,
+                        "openTime": "09:00",
+                        "closeTime": "22:00"
+                    },
+                    {
+                        "dayOfWeek": 5,
+                        "isOpen": true,
+                        "openTime": "09:00",
+                        "closeTime": "22:00"
+                    },
+                    {
+                        "dayOfWeek": 6,
+                        "isOpen": true,
+                        "openTime": "09:00",
+                        "closeTime": "22:00"
                     }
-                    // ... باقي أيام الأسبوع
                 ]
             }
         },
