@@ -12,7 +12,16 @@ const {
   getStoreOffers,
   createStoreOffer,
   getStoreLocations,
-  createStoreLocation
+  createStoreLocation,
+  getStoreDiscounts,
+  createDiscount,
+  updateDiscount,
+  deleteDiscount,
+  getStoreCoupons,
+  createCoupon,
+  updateCoupon,
+  deleteCoupon,
+  validateCoupon
 } = require('../controllers/storeController');
 
 const router = express.Router();
@@ -39,5 +48,18 @@ router.post('/:storeId/offers', createStoreOffer);
 // فروع المتجر
 router.get('/:storeId/locations', getStoreLocations);
 router.post('/:storeId/locations', createStoreLocation);
+
+// الخصومات
+router.get('/:storeId/discounts', getStoreDiscounts);
+router.post('/:storeId/discounts', createDiscount);
+router.put('/:storeId/discounts/:id', updateDiscount);
+router.delete('/:storeId/discounts/:id', deleteDiscount);
+
+// الكوبونات
+router.get('/:storeId/coupons', getStoreCoupons);
+router.post('/:storeId/coupons', createCoupon);
+router.put('/:storeId/coupons/:id', updateCoupon);
+router.delete('/:storeId/coupons/:id', deleteCoupon);
+router.post('/:storeId/coupons/validate', validateCoupon);
 
 module.exports = router; 

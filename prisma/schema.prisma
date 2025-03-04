@@ -231,6 +231,14 @@ model Store {
   
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  Coupon Coupon[]
+
+  Discount Discount[]
+
+  GiftCard GiftCard[]
+
+  Reward Reward[]
 }
 
 model StoreLocation {
@@ -299,4 +307,81 @@ model StoreOffer {
   
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+}
+
+model Discount {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  storeId     String     @db.ObjectId
+  store       Store      @relation(fields: [storeId], references: [id])
+  name        String     // اسم الخصم
+  description String?    // وصف الخصم
+  type        DiscountType // نوع الخصم (نسبة مئوية أو مبلغ ثابت)
+  value       Float      // قيمة الخصم
+  startDate   DateTime   // تاريخ بداية الخصم
+  endDate     DateTime   // تاريخ نهاية الخصم
+  isActive    Boolean    @default(true)
+  minOrderAmount Float?  // الحد الأدنى للطلب
+  maxDiscountAmount Float? // الحد الأقصى للخصم
+  applicableProducts String[] @db.ObjectId // المنتجات التي يطبق عليها الخصم
+  applicableCategories String[] @db.ObjectId // التصنيفات التي يطبق عليها الخصم
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Coupon {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  storeId     String     @db.ObjectId
+  store       Store      @relation(fields: [storeId], references: [id])
+  code        String     @unique // كود الكوبون
+  name        String     // اسم الكوبون
+  description String?    // وصف الكوبون
+  type        DiscountType // نوع الخصم (نسبة مئوية أو مبلغ ثابت)
+  value       Float      // قيمة الخصم
+  startDate   DateTime   // تاريخ بداية الكوبون
+  endDate     DateTime   // تاريخ نهاية الكوبون
+  isActive    Boolean    @default(true)
+  maxUses     Int?       // الحد الأقصى لاستخدام الكوبون
+  usageCount  Int        @default(0) // عدد مرات الاستخدام
+  minOrderAmount Float?  // الحد الأدنى للطلب
+  maxDiscountAmount Float? // الحد الأقصى للخصم
+  applicableProducts String[] @db.ObjectId // المنتجات التي يطبق عليها الكوبون
+  applicableCategories String[] @db.ObjectId // التصنيفات التي يطبق عليها الكوبون
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum DiscountType {
+  PERCENTAGE  // نسبة مئوية
+  FIXED       // مبلغ ثابت
+}
+
+model GiftCard {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  storeId     String   @db.ObjectId
+  store       Store      @relation(fields: [storeId], references: [id])
+  code        String   @unique
+  amount      Float
+  balance     Float
+  isActive    Boolean  @default(true)
+  expiryDate  DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Reward {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  storeId     String   @db.ObjectId
+  store       Store      @relation(fields: [storeId], references: [id])
+  name        String
+  description String?
+  type        String   // "free_product", "discount", "gift_card"
+  value       Float
+  pointsCost  Int      // تكلفة النقاط للحصول على المكافأة
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

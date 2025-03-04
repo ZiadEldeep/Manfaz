@@ -12,6 +12,7 @@ const workerRoutes = require('./routes/workerRoutes');
 const deliveryDriverRoutes = require('./routes/deliveryDriverRoutes');
 const serviceParameterRoutes = require('./routes/serviceParameterRoutes');
 const storeRoutes = require('./routes/storeRoutes');
+const rewardRoutes = require('./routes/rewardRoutes');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/delivery-drivers', deliveryDriverRoutes);
 app.use('/orders', orderRoutes);
 app.use('/service-parameters', serviceParameterRoutes);
 app.use('/api/stores', storeRoutes);
+app.use('/api/rewards', rewardRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 3003;

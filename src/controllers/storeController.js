@@ -443,6 +443,241 @@ const createStoreLocation = async (req, res) => {
   }
 };
 
+// الحصول على خصومات المتجر
+const getStoreDiscounts = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { storeId } = req.params;
+    
+    const discounts = await prisma.discount.findMany({
+      where: {
+        storeId,
+        isActive: true,
+        startDate: { lte: new Date() },
+        endDate: { gte: new Date() }
+      }
+    });
+
+    const message = await translate('Discounts retrieved successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: discounts
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// إنشاء خصم جديد
+const createDiscount = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { storeId } = req.params;
+    const {
+      name,
+      description,
+      type,
+      value,
+      startDate,
+      endDate,
+      minOrderAmount,
+      maxDiscountAmount,
+      applicableProducts,
+      applicableCategories
+    } = req.body;
+
+    if (!name || !type || !value || !startDate || !endDate) {
+      const message = await translate('Missing required fields', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    const discount = await prisma.discount.create({
+      data: {
+        storeId,
+        name,
+        description,
+        type,
+        value,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        minOrderAmount,
+        maxDiscountAmount,
+        applicableProducts,
+        applicableCategories
+      }
+    });
+
+    const message = await translate('Discount created successfully', { to: lang });
+    res.status(201).json({
+      status: true,
+      message,
+      code: 201,
+      data: discount
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// الحصول على كوبونات المتجر
+const getStoreCoupons = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { storeId } = req.params;
+    
+    const coupons = await prisma.coupon.findMany({
+      where: {
+        storeId,
+        isActive: true,
+        startDate: { lte: new Date() },
+        endDate: { gte: new Date() }
+      }
+    });
+
+    const message = await translate('Coupons retrieved successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: coupons
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// إنشاء كوبون جديد
+const createCoupon = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { storeId } = req.params;
+    const {
+      code,
+      name,
+      description,
+      type,
+      value,
+      startDate,
+      endDate,
+      maxUses,
+      minOrderAmount,
+      maxDiscountAmount,
+      applicableProducts,
+      applicableCategories
+    } = req.body;
+
+    if (!code || !name || !type || !value || !startDate || !endDate) {
+      const message = await translate('Missing required fields', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    // التحقق من عدم وجود كوبون بنفس الكود
+    const existingCoupon = await prisma.coupon.findUnique({
+      where: { code }
+    });
+
+    if (existingCoupon) {
+      const message = await translate('Coupon code already exists', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    const coupon = await prisma.coupon.create({
+      data: {
+        storeId,
+        code,
+        name,
+        description,
+        type,
+        value,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        maxUses,
+        minOrderAmount,
+        maxDiscountAmount,
+        applicableProducts,
+        applicableCategories
+      }
+    });
+
+    const message = await translate('Coupon created successfully', { to: lang });
+    res.status(201).json({
+      status: true,
+      message,
+      code: 201,
+      data: coupon
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// التحقق من صلاحية الكوبون
+const validateCoupon = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { storeId } = req.params;
+    const { code, orderAmount, products, categories } = req.body;
+
+    const coupon = await prisma.coupon.findFirst({
+      where: {
+        code,
+        storeId,
+        isActive: true,
+        startDate: { lte: new Date() },
+        endDate: { gte: new Date() }
+      }
+    });
+
+    if (!coupon) {
+      const message = await translate('Invalid coupon code', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    // التحقق من عدد مرات الاستخدام
+    if (coupon.maxUses && coupon.usageCount >= coupon.maxUses) {
+      const message = await translate('Coupon has reached maximum usage limit', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    // التحقق من الحد الأدنى للطلب
+    if (coupon.minOrderAmount && orderAmount < coupon.minOrderAmount) {
+      const message = await translate('Order amount is less than minimum required', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    // حساب قيمة الخصم
+    let discountAmount = coupon.type === 'PERCENTAGE' 
+      ? (orderAmount * coupon.value / 100)
+      : coupon.value;
+
+    // تطبيق الحد الأقصى للخصم إذا وجد
+    if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
+      discountAmount = coupon.maxDiscountAmount;
+    }
+
+    const message = await translate('Coupon is valid', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
+        coupon,
+        discountAmount,
+        finalAmount: orderAmount - discountAmount
+      }
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
 module.exports = {
   getAllStores,
   getStoreById,
@@ -456,5 +691,10 @@ module.exports = {
   getStoreOffers,
   createStoreOffer,
   getStoreLocations,
-  createStoreLocation
+  createStoreLocation,
+  getStoreDiscounts,
+  createDiscount,
+  getStoreCoupons,
+  createCoupon,
+  validateCoupon
 }; 
