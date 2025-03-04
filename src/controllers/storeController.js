@@ -1,7 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Prisma } = require('@prisma/client');
 const prisma = new PrismaClient();
 const  translate  = require('translate-google');
-
 // الحصول على جميع المتاجر
 const getAllStores = async (req, res) => {
   const lang = req.query.lang || 'en';
@@ -449,8 +448,8 @@ const getStoreProducts = async (req, res) => {
       ...(categoryId && { categoryId }),
       ...(search && {
         OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } }
+          { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+          { description: { contains: search, mode: Prisma.QueryMode.insensitive } }
         ]
       })
     };
@@ -463,14 +462,22 @@ const getStoreProducts = async (req, res) => {
     });
     let [translatedProducts,message] = await Promise.all([
       Promise.all(products.map(async (product) => {
-        let [translatedName, translatedDescription] = await Promise.all([
+        let [translatedName, translatedDescription, translatedIngredients, translatedSizes, translatedAdditions] = await Promise.all([
           translate(product.name, { to: lang }),
-          translate(product.description, { to: lang })
+          translate(product.description, { to: lang }),
+          Promise.all(product.ingredients.map(async (ingredient) => translate(ingredient, { to: lang }))),
+          Promise.all(product.extras.sizes.map(async (size) => translate(size, { to: lang }))),
+          Promise.all(product.extras.additions.map(async (addition) => translate(addition.name, { to: lang })))
         ]);
         return {
           ...product,
           name: translatedName,
-          description: translatedDescription
+          description: translatedDescription,
+          ingredients: translatedIngredients,
+          extras: {
+            sizes: translatedSizes,
+            additions: translatedAdditions 
+          }
         };
       })),
       translate('Products retrieved successfully', { to: lang })
