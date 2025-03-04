@@ -13,7 +13,8 @@ const deliveryDriverRoutes = require('./routes/deliveryDriverRoutes');
 const serviceParameterRoutes = require('./routes/serviceParameterRoutes');
 const storeRoutes = require('./routes/storeRoutes');
 const rewardRoutes = require('./routes/rewardRoutes');
-
+const storeWorkingHoursRoutes = require('./routes/storeWorkingHoursRoutes');
+const userLocationRoutes = require('./routes/userLocationRoutes');
 const app = express();
 
 // Middleware
@@ -31,6 +32,8 @@ app.use('/orders', orderRoutes);
 app.use('/service-parameters', serviceParameterRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/rewards', rewardRoutes);
+app.use('/api/store-working-hours', storeWorkingHoursRoutes);
+app.use('/api/user-locations', userLocationRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 3003;

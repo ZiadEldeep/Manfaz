@@ -522,6 +522,71 @@ const createDiscount = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
+// تحديث الخصم
+const updateDiscount = async (req, res) => {
+  const { storeId, id } = req.params;
+  const { lang = 'ar' } = req.query;
+  
+  try {
+    const discount = await prisma.discount.update({
+      where: {
+        id: parseInt(id),
+        storeId: parseInt(storeId)
+      },
+      data: {
+        name: req.body.name,
+        description: req.body.description,
+        type: req.body.type,
+        value: req.body.value,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+        minOrderAmount: req.body.minOrderAmount,
+        maxDiscountAmount: req.body.maxDiscountAmount,
+        applicableProducts: req.body.applicableProducts,
+        applicableCategories: req.body.applicableCategories
+      }
+    });
+
+    const message = await translate('Discount updated successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: discount
+    });
+
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// حذف الخصم
+const deleteDiscount = async (req, res) => {
+  const { storeId, id } = req.params;
+  const { lang = 'ar' } = req.query;
+
+  try {
+    await prisma.discount.delete({
+      where: {
+        id: parseInt(id),
+        storeId: parseInt(storeId)
+      }
+    });
+
+    const message = await translate('Discount deleted successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: null
+    });
+
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
 
 // الحصول على كوبونات المتجر
 const getStoreCoupons = async (req, res) => {
@@ -678,6 +743,71 @@ const validateCoupon = async (req, res) => {
   }
 };
 
+// تحديث الكوبون
+const updateCoupon = async (req, res) => {
+  const { storeId, id } = req.params;
+  const { lang = 'ar' } = req.query;
+  
+  try {
+    const coupon = await prisma.coupon.update({
+      where: {
+        id: parseInt(id),
+        storeId: parseInt(storeId)
+      },
+      data: {
+        code: req.body.code,
+        type: req.body.type,
+        value: req.body.value,
+        maxUses: req.body.maxUses,
+        minOrderAmount: req.body.minOrderAmount,
+        maxDiscountAmount: req.body.maxDiscountAmount,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+        isActive: req.body.isActive
+      }
+    });
+
+    const message = await translate('Coupon updated successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: coupon
+    });
+
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// حذف الكوبون
+const deleteCoupon = async (req, res) => {
+  const { storeId, id } = req.params;
+  const { lang = 'ar' } = req.query;
+
+  try {
+    await prisma.coupon.delete({
+      where: {
+        id: parseInt(id),
+        storeId: parseInt(storeId)
+      }
+    });
+
+    const message = await translate('Coupon deleted successfully', { to: lang });
+    res.status(200).json({
+      status: true, 
+      message,
+      code: 200,
+      data: null
+    });
+
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
 module.exports = {
   getAllStores,
   getStoreById,
@@ -694,7 +824,11 @@ module.exports = {
   createStoreLocation,
   getStoreDiscounts,
   createDiscount,
+  updateDiscount,
+  deleteDiscount,
   getStoreCoupons,
   createCoupon,
+  updateCoupon,
+  deleteCoupon,
   validateCoupon
 }; 
