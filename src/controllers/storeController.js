@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { translate } = require('translate-google');
+const  translate  = require('translate-google');
 
 // الحصول على جميع المتاجر
 const getAllStores = async (req, res) => {
