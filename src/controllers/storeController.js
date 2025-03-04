@@ -188,7 +188,7 @@ const createStoreOffer = async (req, res) => {
       const message = await translate('Name and type are required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let {translateName,translateDescription,translateType} = await translate([name,description,type],{to:"en"});
+    let [translateName,translateDescription,translateType] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"}),translate(type,{to:"en"})]);
     const offer = await prisma.storeOffer.create({
       data: {
         name:translateName,
@@ -255,7 +255,7 @@ const updateStore = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    let {translateName,translateDescription,translateType,translateAddress} = await translate([updateData.name,updateData.description,updateData.type,updateData.address],{to:"en"});
+    let [translateName,translateDescription,translateType,translateAddress] = await Promise.all([translate(updateData.name,{to:"en"}),translate(updateData.description,{to:"en"}),translate(updateData.type,{to:"en"}),translate(updateData.address,{to:"en"})]);
     const store = await prisma.store.update({
       where: { id },
       data: {
@@ -340,7 +340,7 @@ const createStoreCategory = async (req, res) => {
       const message = await translate('Category name is required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let {translateName,translateDescription} = await translate([name,description],{to:"en"});
+    let [translateName,translateDescription] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"})]);
     const category = await prisma.storeCategory.create({
       data: {
         name:translateName,
