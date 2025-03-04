@@ -26,6 +26,8 @@ model User {
   Order Order[]
 
   Wallet Wallet[]
+
+  locations   UserLocation[]
 }
 enum UserRole {
   user
@@ -384,4 +386,26 @@ model Reward {
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model UserLocation {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String     @db.ObjectId
+  user        User       @relation(fields: [userId], references: [id])
+  name        String     // اسم العنوان (المنزل، العمل، الخ)
+  address     String     // العنوان التفصيلي
+  apartment   String?    // رقم الشقة
+  floor       String?    // رقم الطابق
+  building    String?    // رقم المبنى
+  street      String?    // اسم الشارع
+  area        String?    // المنطقة
+  city        String     // المدينة
+  latitude    Float
+  longitude   Float
+  isDefault   Boolean    @default(false) // هل هو العنوان الافتراضي
+  type        String     // "home", "work", "other"
+  notes       String?    // ملاحظات إضافية
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
