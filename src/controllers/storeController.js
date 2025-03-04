@@ -442,6 +442,9 @@ const getStoreProducts = async (req, res) => {
   try {
     const { storeId } = req.params;
     const { categoryId, search } = req.query;
+    let limit = req.query.limit || 10;
+    let page = req.query.page || 1;
+    let offset = (page - 1) * limit;
 
     const where = {
       storeId,
@@ -458,7 +461,9 @@ const getStoreProducts = async (req, res) => {
       where,
       include: {
         category: true
-      }
+      },
+      skip: offset,
+      take: limit
     });
     let [translatedProducts,message] = await Promise.all([
       Promise.all(products.map(async (product) => {
