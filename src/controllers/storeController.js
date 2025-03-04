@@ -373,7 +373,7 @@ const getAllStoreCategories = async (req, res) => {
   try {
     const categories = await prisma.storeCategory.findMany({
       skip: offset,
-      take: limit
+      take: +limit
     });
     let [translatedCategories,message] = await Promise.all([
       Promise.all(categories.map(async (category) => {
@@ -463,7 +463,7 @@ const getStoreProducts = async (req, res) => {
         category: true
       },
       skip: offset,
-      take: limit
+      take: +limit
     });
     let [translatedProducts,message] = await Promise.all([
       Promise.all(products.map(async (product) => {
