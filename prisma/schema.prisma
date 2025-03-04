@@ -46,6 +46,7 @@ model Category {
   price       Float?     // New field for price
   imageUrl    String?
   type        ServiceType                  // "worker" (عمالة مؤقتة) أو "delivery" (توصيل)
+  subType        ServiceSubType?                  // "worker" (عمالة مؤقتة) أو "delivery" (توصيل)
   status      String     @default("active") // "active", "inactive", "archived"
   sortOrder   Int        @default(0)
   createdAt   DateTime   @default(now()) 
@@ -63,7 +64,7 @@ enum ServiceType {
 
 enum ServiceSubType {
   delivery_service
-  delivery_driver
+  delivery_product
 }
 
 model Service {
