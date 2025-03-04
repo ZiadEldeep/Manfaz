@@ -11,11 +11,11 @@ const register = async (req, res) => {
     const { name, email, phone, password, role ,token} = req.body;
 
     if (!name || !email || !phone || !password || !role) {
-      const message = await translate('Name, password, email  phone  role are required', { to: lang });
-      return res.status(400).json({
+      const message = await translate('name, password, email  phone  role are required', { to: lang });
+      return res.status(401).json({
         status: false,
         message,
-        code: 400,
+        code: 401,
         data: null,
       });
     }
@@ -28,10 +28,10 @@ const register = async (req, res) => {
 
     if (existingUser) {
       const message = await translate('Email or phone already in use', { to: lang });
-      return res.status(400).json({
+      return res.status(401).json({
         status: false,
         message,
-        code: 400,
+        code: 401,
         data: null,
       });
     }
@@ -247,7 +247,7 @@ const resendVerificationCode = async (req, res) => {
     }
 
     // Generate new verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000);
+    const verificationCode = generateVerificationCode();
 
     // Update user with new code
     await prisma.user.update({
@@ -284,10 +284,10 @@ const verifyAccount = async (req, res) => {
 
     if (!id || !verificationCode) {
       const message = await translate('Id and verification code are required', { to: lang });
-      return res.status(400).json({
+      return res.status(401).json({
         status: false,
         message,  
-        code: 400,
+        code: 401,
         data: null
       });
     }
