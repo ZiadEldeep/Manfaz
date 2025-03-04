@@ -40,10 +40,8 @@ const createStore = async (req, res) => {
       address,
       phone,
       email,
-      workingHours,
       minOrderAmount,
       deliveryFee,
-      locations,
       categoryId
     } = req.body;
 
@@ -68,9 +66,6 @@ const createStore = async (req, res) => {
         address:translateAddress,
         phone,
         email,
-        workingHours,
-        locations,
-        workingHours,
         minOrderAmount,
         categoryId,
         deliveryFee
