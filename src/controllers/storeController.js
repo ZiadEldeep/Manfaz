@@ -4,13 +4,23 @@ const  translate  = require('translate-google');
 // الحصول على جميع المتاجر
 const getAllStores = async (req, res) => {
   const lang = req.query.lang || 'en';
+  let limit = req.query.limit || 10;
+  let page = req.query.page || 1;
+  let offset = (page - 1) * limit;
+  let search = req.query.search || '';
+  let categoryId = req.query.categoryId || '';
   try {
+    let searchTranslated = await translate(search, { to: lang });
+    let searchQuery = {OR:[{name:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{description:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{type:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{address:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}}]}
     const stores = await prisma.store.findMany({
       include: {
         categories: true,
         locations: true,
         workingHours: true
-      }
+      },
+      where: {...searchQuery,categories:{some:{id:categoryId}}},
+      skip: offset,
+      take: +limit
     });
 
     const message = await translate('Stores retrieved successfully', { to: lang });
