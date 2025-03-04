@@ -6,6 +6,7 @@ const {
   updateStore,
   deleteStore,
   getStoreCategories,
+  getAllStoreCategories,
   createStoreCategory,
   getStoreProducts,
   createStoreProduct,
@@ -35,6 +36,7 @@ router.delete('/:id', deleteStore);
 
 // تصنيفات المتجر
 router.get('/:storeId/categories', getStoreCategories);
+router.get('/categories/all', getAllStoreCategories);
 router.post('/:storeId/categories', createStoreCategory);
 
 // منتجات المتجر

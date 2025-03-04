@@ -366,6 +366,41 @@ const getStoreCategories = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
+const getAllStoreCategories = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  let limit = req.query.limit || 10;
+  let page = req.query.page || 1;
+  let offset = (page - 1) * limit;
+  try {
+    const categories = await prisma.storeCategory.findMany({
+      skip: offset,
+      take: limit
+    });
+    let [translatedCategories,message] = await Promise.all([
+      Promise.all(categories.map(async (category) => {
+        let [translatedName, translatedDescription] = await Promise.all([
+          translate(category.name, { to: lang }),
+          translate(category.description, { to: lang })
+        ]);
+        return {
+          ...category,
+          name: translatedName,
+          description: translatedDescription
+        };
+      })),
+      translate('Categories retrieved successfully', { to: lang })
+    ]);
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: translatedCategories
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
 
 // إنشاء تصنيف جديد
 const createStoreCategory = async (req, res) => {
@@ -964,6 +999,7 @@ module.exports = {
   updateStore,
   deleteStore,
   getStoreCategories,
+  getAllStoreCategories,
   createStoreCategory,
   getStoreProducts,
   createStoreProduct,
