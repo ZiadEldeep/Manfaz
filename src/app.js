@@ -30,10 +30,10 @@ app.use('/workers', workerRoutes);
 app.use('/delivery-drivers', deliveryDriverRoutes);
 app.use('/orders', orderRoutes);
 app.use('/service-parameters', serviceParameterRoutes);
-app.use('/api/stores', storeRoutes);
-app.use('/api/rewards', rewardRoutes);
-app.use('/api/store-working-hours', storeWorkingHoursRoutes);
-app.use('/api/user-locations', userLocationRoutes);
+app.use('/stores', storeRoutes);
+app.use('/rewards', rewardRoutes);
+app.use('/store-working-hours', storeWorkingHoursRoutes);
+app.use('/user-locations', userLocationRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 3003;

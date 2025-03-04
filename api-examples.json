@@ -1,0 +1,240 @@
+{
+    "stores": {
+        "createStore": {
+            "method": "POST",
+            "url": "/api/stores",
+            "body": {
+                "name": "مطعم الشرق",
+                "description": "مطعم مأكولات شرقية",
+                "type": "مطاعم",
+                "logo": "url/to/logo.jpg",
+                "coverImage": "url/to/cover.jpg",
+                "images": [
+                    "url1.jpg",
+                    "url2.jpg"
+                ],
+                "address": "شارع المطاعم، القاهرة",
+                "phone": "0123456789",
+                "email": "info@restaurant.com",
+                "minOrderAmount": 50,
+                "deliveryFee": 15
+            }
+        },
+        "updateStore": {
+            "method": "PUT",
+            "url": "/api/stores/:id",
+            "body": {
+                "name": "مطعم الشرق الجديد",
+                "description": "مطعم مأكولات شرقية وغربية"
+            }
+        },
+        "createCategory": {
+            "method": "POST",
+            "url": "/api/stores/:storeId/categories",
+            "body": {
+                "name": "برجر",
+                "description": "تشكيلة متنوعة من البرجر",
+                "image": "url/to/category.jpg"
+            }
+        },
+        "createProduct": {
+            "method": "POST",
+            "url": "/api/stores/:storeId/products",
+            "body": {
+                "name": "تشيز برجر",
+                "description": "برجر لحم مع جبنة شيدر",
+                "price": 65.0,
+                "salePrice": 55.0,
+                "images": [
+                    "url1.jpg",
+                    "url2.jpg"
+                ],
+                "categoryId": "category_id",
+                "ingredients": [
+                    "لحم",
+                    "جبنة",
+                    "خضروات"
+                ],
+                "extras": {
+                    "sizes": [
+                        "صغير",
+                        "وسط",
+                        "كبير"
+                    ],
+                    "additions": [
+                        {
+                            "name": "جبنة إضافية",
+                            "price": 10
+                        },
+                        {
+                            "name": "بيكون",
+                            "price": 15
+                        }
+                    ]
+                }
+            }
+        },
+        "createOffer": {
+            "method": "POST",
+            "url": "/api/stores/:storeId/offers",
+            "body": {
+                "name": "عرض رمضان",
+                "description": "خصم 20% على جميع المنتجات",
+                "type": "ramadan",
+                "image": "url/to/offer.jpg",
+                "startDate": "2024-03-10T00:00:00Z",
+                "endDate": "2024-04-10T23:59:59Z",
+                "discount": 20
+            }
+        }
+    },
+    "rewards": {
+        "createGiftCard": {
+            "method": "POST",
+            "url": "/api/rewards/gift-cards",
+            "body": {
+                "storeId": "store_id",
+                "amount": 200,
+                "expiryDate": "2024-12-31T23:59:59Z",
+                "numberOfCards": 5
+            }
+        },
+        "redeemGiftCard": {
+            "method": "POST",
+            "url": "/api/rewards/gift-cards/:code/redeem",
+            "body": {
+                "amount": 50
+            }
+        },
+        "createReward": {
+            "method": "POST",
+            "url": "/api/rewards/rewards",
+            "body": {
+                "storeId": "store_id",
+                "name": "وجبة مجانية",
+                "description": "برجر مجاني مع كل 5 طلبات",
+                "type": "free_product",
+                "value": 65,
+                "pointsCost": 500
+            }
+        }
+    },
+    "userLocations": {
+        "createLocation": {
+            "method": "POST",
+            "url": "/api/user-locations/users/:userId/locations",
+            "body": {
+                "name": "المنزل",
+                "address": "شارع 15، المعادي",
+                "apartment": "12",
+                "floor": "3",
+                "building": "6",
+                "street": "شارع 15",
+                "area": "المعادي",
+                "city": "القاهرة",
+                "latitude": 30.12345,
+                "longitude": 31.12345,
+                "type": "home",
+                "notes": "بجوار السوبر ماركت",
+                "isDefault": true
+            }
+        },
+        "updateLocation": {
+            "method": "PUT",
+            "url": "/api/user-locations/locations/:id",
+            "body": {
+                "name": "العمل",
+                "address": "شارع التحرير",
+                "type": "work"
+            }
+        }
+    },
+    "workingHours": {
+        "setWorkingHours": {
+            "method": "POST",
+            "url": "/api/store-working-hours/stores/:storeId/working-hours",
+            "body": {
+                "workingHours": [
+                    {
+                        "dayOfWeek": 0,
+                        "isOpen": true,
+                        "openTime": "09:00",
+                        "closeTime": "22:00",
+                        "breakStart": "15:00",
+                        "breakEnd": "16:00"
+                    },
+                    {
+                        "dayOfWeek": 1,
+                        "isOpen": true,
+                        "openTime": "09:00",
+                        "closeTime": "22:00"
+                    }
+                    // ... باقي أيام الأسبوع
+                ]
+            }
+        },
+        "addSpecialDay": {
+            "method": "POST",
+            "url": "/api/store-working-hours/stores/:storeId/special-days",
+            "body": {
+                "specialDate": "2024-04-10",
+                "isOpen": false,
+                "note": "عطلة رسمية"
+            }
+        }
+    },
+    "discountsAndCoupons": {
+        "createDiscount": {
+            "method": "POST",
+            "url": "/api/stores/:storeId/discounts",
+            "body": {
+                "name": "خصم الصيف",
+                "description": "خصم 15% على جميع المشروبات",
+                "type": "PERCENTAGE",
+                "value": 15,
+                "startDate": "2024-06-01T00:00:00Z",
+                "endDate": "2024-08-31T23:59:59Z",
+                "minOrderAmount": 100,
+                "maxDiscountAmount": 50,
+                "applicableProducts": [
+                    "product_id1",
+                    "product_id2"
+                ],
+                "applicableCategories": [
+                    "category_id1"
+                ]
+            }
+        },
+        "createCoupon": {
+            "method": "POST",
+            "url": "/api/stores/:storeId/coupons",
+            "body": {
+                "code": "SUMMER2024",
+                "name": "كوبون الصيف",
+                "description": "خصم 50 جنيه على الطلب",
+                "type": "FIXED",
+                "value": 50,
+                "startDate": "2024-06-01T00:00:00Z",
+                "endDate": "2024-08-31T23:59:59Z",
+                "maxUses": 100,
+                "minOrderAmount": 200,
+                "maxDiscountAmount": 50
+            }
+        },
+        "validateCoupon": {
+            "method": "POST",
+            "url": "/api/stores/:storeId/coupons/validate",
+            "body": {
+                "code": "SUMMER2024",
+                "orderAmount": 250,
+                "products": [
+                    "product_id1",
+                    "product_id2"
+                ],
+                "categories": [
+                    "category_id1"
+                ]
+            }
+        }
+    }
+}
