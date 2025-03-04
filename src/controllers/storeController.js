@@ -43,6 +43,7 @@ const createStore = async (req, res) => {
       workingHours,
       minOrderAmount,
       deliveryFee,
+      locations,
       categoryId
     } = req.body;
 
@@ -68,7 +69,10 @@ const createStore = async (req, res) => {
         phone,
         email,
         workingHours,
+        locations,
+        workingHours,
         minOrderAmount,
+        categoryId,
         deliveryFee
       }
     });
