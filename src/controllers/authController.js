@@ -314,7 +314,7 @@ const verifyAccount = async (req, res) => {
       });
     }
 
-    await prisma.user.update({
+   let user = await prisma.user.update({
       where: { id },
       data: { isVerified: true }
     });
@@ -324,7 +324,7 @@ const verifyAccount = async (req, res) => {
       status: true,
       message,
       code: 200,
-      data: null
+      data: user
     });
   } catch (error) {
     const message = await translate(`Internal server error: ${error.message}`, { to: lang });
