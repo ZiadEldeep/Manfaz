@@ -135,8 +135,21 @@ const login = async (req, res) => {
         data: null,
       });
     }
-    const message = await translate('Login successful', { to: lang });
-
+    if(!user.isVerified){
+      let verificationCode = generateVerificationCode();
+      let user2 = await prisma.user.update({
+        where: { id: user.id },
+        data: { verificationCode }
+      });
+      await sendConfirmationEmail(user.email, verificationCode);
+      const message = await translate('Account not verified', { to: lang });
+      return res.status(200).json({
+        status: false,
+        message,
+        code: 200,
+        data: user2,
+      });
+    }
     if (lang === 'en') {
       res.status(200).json({
         status: true,

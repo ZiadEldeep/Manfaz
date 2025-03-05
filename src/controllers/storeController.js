@@ -381,8 +381,12 @@ const getAllStoreCategories = async (req, res) => {
   let limit = req.query.limit || 10;
   let page = req.query.page || 1;
   let offset = (page - 1) * limit;
+  let search = req.query.search || '';
   try {
+    let searchTranslated = search ? await translate(search, { to: lang }) : '';
+    let searchQuery = search ? {OR:[{name:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{description:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}}]} : {};
     const categories = await prisma.storeCategory.findMany({
+      where:searchQuery,
       skip: offset,
       take: +limit
     });
