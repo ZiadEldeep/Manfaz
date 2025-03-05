@@ -125,7 +125,6 @@ model Worker {
   user            User?     @relation(fields: [userId], references: [id])
   title           String    // الوظيفة (مثل "مصمم UX")
   description     String    // وصف مختصر للخبرة
-  location        String    // موقع العامل (مثل "نيويورك، الولايات المتحدة")
   profileImage    String?   // رابط صورة الملف الشخصي
   isAvailable     Boolean   @default(true)  // حالة الاتصال
   isFavorite      Boolean   @default(false) // محفوظ في المفضلة
@@ -170,9 +169,9 @@ model Order {
   deliveryDriver DeliveryDriver? @relation(fields: [deliveryDriverId], references: [id])
   description  String?
   imageUrl     String?
-  address      String?
-  latitude     Float?
-  longitude    Float?
+  locationId   String @db.ObjectId
+  location     UserLocation? @relation(fields: [locationId], references: [id])
+  notes        String
   price        Float?
   duration     Int?
   status       OrderStatus     @default(pending) // "pending", "in_progress", "completed", "canceled"
@@ -266,7 +265,6 @@ model StoreLocation {
   longitude   Float      // خط الطول
   phone       String?    // رقم الهاتف
   isActive    Boolean    @default(true)
-  
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -420,6 +418,8 @@ model UserLocation {
   
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  Order Order[]
 }
 
 model StoreWorkingHours {

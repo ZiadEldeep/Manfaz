@@ -96,33 +96,45 @@ const createOrder = async (req, res) => {
       type,
       description,
       imageUrl,
-      address,
-      latitude,
-      longitude,
+      locationId,
       price,
-      duration
+      duration,
+      ...createOrderData
     } = req.body;
 
-    const service = await prisma.service.findUnique({
+    const service =type === "service" ? await prisma.serviceParameter.findUnique({
       where: { id: serviceId },
-    });
+    }):type === "dilivery" ? await prisma.store.findUnique({
+      where: { id: serviceId },
+    }):null;
 
     if (!service) {
       const message = await translate('Service not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
-
+    const user = await prisma.user.findUnique({
+      where: { id: userId,role:"user" },
+    });
+    if (!user) {
+      const message = await translate('User not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });      
+    }
+    const location = await prisma.userLocation.findUnique({
+    where:{id:locationId}
+    })
+    if (!location) {
+      const message = await translate('User Location not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });  
+    }
     // التحقق من نوع الطلب وإنشاءه
-    if (type === "work") {
-      if (!userId || !serviceId || !providerId || !totalAmount || !description || !imageUrl || !address || !latitude || !longitude || !price || !duration) {
+    if (type === "service") {
+      if (!userId || !serviceId || !providerId || !totalAmount || !description || !imageUrl || !price ) {
         const message = await translate('All fields are required', { to: lang });
         return res.status(400).json({ status: false, message, code: 400, data: null });
       }
-
       const provider = await prisma.worker.findUnique({
         where: { id: providerId },
       });
-
       if (!provider) {
         const message = await translate('Worker not found', { to: lang });
         return res.status(404).json({ status: false, message, code: 404, data: null });
@@ -142,11 +154,9 @@ const createOrder = async (req, res) => {
           totalAmount,
           description: translatedDesc,
           imageUrl,
-          address: translatedAddress,
-          latitude,
-          longitude,
+          locationId,
           price,
-          duration
+          duration,...createOrderData
         },
       });
 
@@ -178,20 +188,10 @@ const createOrder = async (req, res) => {
           address: finalAddress
         }
       });
-    } else if (type === "delivery") {
-      // نفس المنطق السابق ولكن للتوصيل
-      if (!userId || !serviceId || !deliveryDriverId || !totalAmount || !description || !imageUrl || !address || !latitude || !longitude || !price || !duration) {
+    }else{
+      if (!userId  || !totalAmount || !description || !imageUrl || !price ) {
         const message = await translate('All fields are required', { to: lang });
         return res.status(400).json({ status: false, message, code: 400, data: null });
-      }
-
-      const deliveryDriver = await prisma.deliveryDriver.findUnique({
-        where: { id: deliveryDriverId },
-      });
-
-      if (!deliveryDriver) {
-        const message = await translate('Delivery driver not found', { to: lang });
-        return res.status(404).json({ status: false, message, code: 404, data: null });
       }
 
       // ترجمة الحقول النصية إلى الإنجليزية
@@ -203,16 +203,13 @@ const createOrder = async (req, res) => {
       const newOrder = await prisma.order.create({
         data: {
           userId,
-          serviceId,
-          deliveryDriverId,
+          storeId:service.id,
           totalAmount,
           description: translatedDesc,
           imageUrl,
-          address: translatedAddress,
-          latitude,
-          longitude,
+          locationId,
           price,
-          duration
+          duration,...createOrderData
         },
       });
 
@@ -244,7 +241,75 @@ const createOrder = async (req, res) => {
           address: finalAddress
         }
       });
+
     }
+    // else if (type === "delivery") {
+    //   // نفس المنطق السابق ولكن للتوصيل
+    //   if (!userId || !serviceId || !deliveryDriverId || !totalAmount || !description || !imageUrl || !address || !latitude || !longitude || !price || !duration) {
+    //     const message = await translate('All fields are required', { to: lang });
+    //     return res.status(400).json({ status: false, message, code: 400, data: null });
+    //   }
+
+    //   const deliveryDriver = await prisma.deliveryDriver.findUnique({
+    //     where: { id: deliveryDriverId },
+    //   });
+
+    //   if (!deliveryDriver) {
+    //     const message = await translate('Delivery driver not found', { to: lang });
+    //     return res.status(404).json({ status: false, message, code: 404, data: null });
+    //   }
+
+    //   // ترجمة الحقول النصية إلى الإنجليزية
+    //   const [translatedDesc, translatedAddress] = await Promise.all([
+    //     translate(description, { to: "en" }),
+    //     translate(address, { to: "en" })
+    //   ]);
+
+    //   const newOrder = await prisma.order.create({
+    //     data: {
+    //       userId,
+    //       serviceId,
+    //       deliveryDriverId,
+    //       totalAmount,
+    //       description: translatedDesc,
+    //       imageUrl,
+    //       address: translatedAddress,
+    //       latitude,
+    //       longitude,
+    //       price,
+    //       duration
+    //     },
+    //   });
+
+    //   const message = await translate('Order created successfully', { to: lang });
+
+    //   if (lang === 'en') {
+    //     res.status(201).json({
+    //       status: true,
+    //       message,
+    //       code: 201,
+    //       data: newOrder
+    //     });
+    //     return;
+    //   }
+
+    //   // ترجمة البيانات للغة المطلوبة
+    //   const [finalDesc, finalAddress] = await Promise.all([
+    //     translate(newOrder.description, { to: lang }),
+    //     translate(newOrder.address, { to: lang })
+    //   ]);
+
+    //   res.status(201).json({
+    //     status: true,
+    //     message,
+    //     code: 201,
+    //     data: {
+    //       ...newOrder,
+    //       description: finalDesc,
+    //       address: finalAddress
+    //     }
+    //   });
+    // }
   } catch (error) {
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });

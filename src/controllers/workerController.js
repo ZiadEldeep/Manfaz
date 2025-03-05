@@ -67,11 +67,11 @@ const createWorker = async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: userId,role:"worker" },
     });
 
     if (!user) {
-      const message = await translate('User not found', { to: lang });
+      const message = await translate('User not found as worker', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
 
