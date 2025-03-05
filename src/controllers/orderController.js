@@ -128,7 +128,7 @@ const createOrder = async (req, res) => {
     }
     // التحقق من نوع الطلب وإنشاءه
     if (type === "service") {
-      if (!userId || !serviceId || !providerId || !totalAmount || !description || !imageUrl || !price ) {
+      if (!userId || !serviceId || !providerId || !totalAmount || !price ) {
         const message = await translate('All fields are required', { to: lang });
         return res.status(400).json({ status: false, message, code: 400, data: null });
       }
@@ -141,7 +141,7 @@ const createOrder = async (req, res) => {
       }
 
       // ترجمة الحقول النصية إلى الإنجليزية
-      const [translatedDesc, translatedAddress] = await Promise.all([
+      const [translatedDesc] = await Promise.all([
         translate(description, { to: "en" }),
         translate(address, { to: "en" })
       ]);
@@ -173,7 +173,7 @@ const createOrder = async (req, res) => {
       }
 
       // ترجمة البيانات للغة المطلوبة
-      const [finalDesc, finalAddress] = await Promise.all([
+      const [finalDesc] = await Promise.all([
         translate(newOrder.description, { to: lang }),
         translate(newOrder.address, { to: lang })
       ]);
@@ -185,17 +185,16 @@ const createOrder = async (req, res) => {
         data: {
           ...newOrder,
           description: finalDesc,
-          address: finalAddress
         }
       });
     }else{
-      if (!userId  || !totalAmount || !description || !imageUrl || !price ) {
+      if (!userId  || !totalAmount  || !price ) {
         const message = await translate('All fields are required', { to: lang });
         return res.status(400).json({ status: false, message, code: 400, data: null });
       }
 
       // ترجمة الحقول النصية إلى الإنجليزية
-      const [translatedDesc, translatedAddress] = await Promise.all([
+      const [translatedDesc] = await Promise.all([
         translate(description, { to: "en" }),
         translate(address, { to: "en" })
       ]);

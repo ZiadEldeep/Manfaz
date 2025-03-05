@@ -55,13 +55,12 @@ const createWorker = async (req, res) => {
       userId, 
       title,
       description,
-      location,
       profileImage,
       hourlyRate,
       skills 
     } = req.body;
 
-    if (!userId || !title || !description || !location || !hourlyRate || !skills) {
+    if (!userId || !title || !description || !hourlyRate || !skills) {
       const message = await translate('All required fields must be provided', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
@@ -76,10 +75,9 @@ const createWorker = async (req, res) => {
     }
 
     // ترجمة جميع الحقول في وقت واحد
-    const [translateTitle, translateDesc, translateLoc, translateSkills] = await Promise.all([
+    const [translateTitle, translateDesc, translateSkills] = await Promise.all([
       translate(title, { to: "en" }),
       translate(description, { to: "en" }),
-      translate(location, { to: "en" }),
       Promise.all(skills.map(skill => translate(skill, { to: "en" })))
     ]);
 
@@ -88,7 +86,6 @@ const createWorker = async (req, res) => {
         userId,
         title: translateTitle,
         description: translateDesc,
-        location: translateLoc,
         profileImage,
         hourlyRate,
         skills: translateSkills,
@@ -199,7 +196,7 @@ const updateWorker = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-    const { title, description, location, skills, hourlyRate } = req.body;
+    const { title, description, skills, hourlyRate } = req.body;
 
     if (!id) {
       const message = await translate('id is required', { to: lang });
@@ -216,10 +213,9 @@ const updateWorker = async (req, res) => {
     }
 
     // ترجمة جميع الحقول المحدثة في وقت واحد
-    const [transTitle, transDesc, transLoc, transSkills] = await Promise.all([
+    const [transTitle, transDesc, transSkills] = await Promise.all([
       title ? translate(title, { to: "en" }) : worker.title,
       description ? translate(description, { to: "en" }) : worker.description,
-      location ? translate(location, { to: "en" }) : worker.location,
       skills ? Promise.all(skills.map(skill => translate(skill, { to: "en" }))) : worker.skills
     ]);
 
@@ -228,7 +224,6 @@ const updateWorker = async (req, res) => {
       data: {
         title: transTitle,
         description: transDesc,
-        location: transLoc,
         skills: transSkills,
         hourlyRate: hourlyRate || worker.hourlyRate
       },
@@ -247,10 +242,9 @@ const updateWorker = async (req, res) => {
     }
 
     // ترجمة البيانات المحدثة للغة المطلوبة
-    const [finalTitle, finalDesc, finalLoc, finalSkills] = await Promise.all([
+    const [finalTitle, finalDesc, finalSkills] = await Promise.all([
       translate(updatedWorker.title, { to: lang }),
       translate(updatedWorker.description, { to: lang }),
-      translate(updatedWorker.location, { to: lang }),
       Promise.all(updatedWorker.skills.map(skill => translate(skill, { to: lang })))
     ]);
 
