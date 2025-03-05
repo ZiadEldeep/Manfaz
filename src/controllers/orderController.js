@@ -1,10 +1,37 @@
+const { Prisma } = require('@prisma/client');
 const prisma = require('../prismaClient');
 const translate = require('translate-google');
 // Get All Orders
 const getAllOrders = async (req, res) => {
   const lang = req.query.lang || 'en';
+  const { userId, role, limit = 10, page = 1, search } = req.query;
+  const skip = (page - 1) * limit;
+  let searchTranslated = search ? await translate(search, { to: lang }) : undefined;
+  let searchCondition = {};
+  if (searchTranslated) {
+    searchCondition = {
+      OR: [
+        { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
+        { address: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
+        { store: { name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } } }
+      ]
+    };
+  }
+  const whereCondition =
+    role === 'user' ? { userId } : role === 'worker' ? { providerId: userId } : { deliveryDriverId: userId }
   try {
-    const orders = await prisma.order.findMany();
+    const orders = await prisma.order.findMany({
+      where: { ...whereCondition, ...searchCondition },
+      include: {
+        service: true,
+        provider: true,
+        deliveryDriver: true,
+        store: true,
+        user: true
+      },
+      skip,
+      take: +limit
+    });
     const message = await translate('Orders retrieved successfully', { to: lang });
 
     if (lang === 'en') {
@@ -222,11 +249,11 @@ const getOrderById = async (req, res) => {
 
     if (!order) {
       const message = await translate('Order not found', { to: lang });
-      return res.status(404).json({ 
-        status: false, 
-        message, 
-        code: 404, 
-        data: null 
+      return res.status(404).json({
+        status: false,
+        message,
+        code: 404,
+        data: null
       });
     }
 
@@ -352,7 +379,7 @@ const deleteOrder = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-    
+
     const order = await prisma.order.findUnique({
       where: { id },
     });

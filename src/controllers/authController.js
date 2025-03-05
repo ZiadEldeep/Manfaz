@@ -8,7 +8,7 @@ const register = async (req, res) => {
   const lang = req.query.lang || 'en';
 
   try {
-    const { name, email, phone, password, role ,token} = req.body;
+    const { name, email, phone, password, role, token } = req.body;
 
     if (!name || !email || !phone || !password || !role) {
       const message = await translate('name, password, email  phone  role are required', { to: lang });
@@ -40,14 +40,14 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await prisma.user.create({
-      data: { 
-        name, 
-        email, 
-        phone, 
+      data: {
+        name,
+        email,
+        phone,
         password: hashedPassword,
         verificationCode,
         token,
-        role 
+        role
       },
     });
 
@@ -93,7 +93,7 @@ const login = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     // التحقق من وجود إما البريد الإلكتروني أو رقم الهاتف
-    const { email, password, phone,role,isVerified } = req.body;
+    const { email, password, phone, role, isVerified } = req.body;
     let whereCondition;
     if (email) {
       whereCondition = { email };
@@ -115,11 +115,13 @@ const login = async (req, res) => {
     }
 
     const user = await prisma.user.findUnique(
-      { where: whereCondition ,
-        include:{
-      locations:true,
-      Worker:role === 'worker' ? true : false,
-    }});
+      {
+        where: whereCondition,
+        include: {
+          locations: true,
+          Worker: role === 'worker' ? true : false,
+        }
+      });
 
     if (!user) {
       const message = await translate('Invalid email or phone or password or role', { to: lang });
@@ -140,7 +142,7 @@ const login = async (req, res) => {
         data: null,
       });
     }
-    if(!user.isVerified){
+    if (!user.isVerified) {
       let verificationCode = generateVerificationCode();
       let user2 = await prisma.user.update({
         where: { id: user.id },
@@ -288,7 +290,7 @@ const resendVerificationCode = async (req, res) => {
     const message = await translate(`Internal server error: ${error.message}`, { to: lang });
     console.error('❌ Error resending verification code:', error);
     res.status(500).json({
-      status: false, 
+      status: false,
       message,
       code: 500,
       data: null
@@ -304,13 +306,13 @@ const verifyAccount = async (req, res) => {
       const message = await translate('Id and verification code are required', { to: lang });
       return res.status(401).json({
         status: false,
-        message,  
+        message,
         code: 401,
         data: null
       });
     }
 
-    const user = await prisma.user.findUnique({ where: { id } }); 
+    const user = await prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       const message = await translate('User not found', { to: lang });
@@ -332,7 +334,7 @@ const verifyAccount = async (req, res) => {
       });
     }
 
-   let user2 = await prisma.user.update({
+    let user2 = await prisma.user.update({
       where: { id },
       data: { isVerified: true }
     });
@@ -355,6 +357,6 @@ const verifyAccount = async (req, res) => {
     });
   }
 };
-    
+
 
 module.exports = { register, login, changePassword, resendVerificationCode, verifyAccount };
