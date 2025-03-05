@@ -4,7 +4,7 @@ const translate = require('translate-google');
 // Get All Orders
 const getAllOrders = async (req, res) => {
   const lang = req.query.lang || 'en';
-  const { userId, role, limit = 10, page = 1, search } = req.query;
+  const { userId, role, limit = 10, page = 1, search, status, paymentStatus } = req.query;
   const skip = (page - 1) * limit;
   let searchTranslated = search ? await translate(search, { to: lang }) : undefined;
   let searchCondition = {};
@@ -17,11 +17,19 @@ const getAllOrders = async (req, res) => {
       ]
     };
   }
+  let statusCondition = {};
+  if (status) {
+    statusCondition = { status: status };
+  }
+  let paymentStatusCondition = {};
+  if (paymentStatus) {
+    paymentStatusCondition = { paymentStatus: paymentStatus };
+  }
   const whereCondition =
     role === 'user' ? { userId } : role === 'worker' ? { providerId: userId } : { deliveryDriverId: userId }
   try {
     const orders = await prisma.order.findMany({
-      where: { ...whereCondition, ...searchCondition },
+      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition },
       include: {
         service: true,
         provider: true,
@@ -57,12 +65,17 @@ const getAllOrders = async (req, res) => {
         address: translatedAddress
       };
     }));
-
+    const totalOrders = await prisma.order.count({ where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition } });
+    const totalPages = Math.ceil(totalOrders / limit);
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: translatedOrders
+      data: {
+        orders: translatedOrders, totalPages,
+        currentPage: page,
+        totalOrders
+      }
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
