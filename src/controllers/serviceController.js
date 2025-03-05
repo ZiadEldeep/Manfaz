@@ -81,7 +81,7 @@ const createService = async (req, res) => {
       price, 
       duration,
       imageUrl,
-      iconUrl 
+      iconUrl ,...created
     } = req.body;
 
     if (!name || !slug || !description || !categoryId || !type || !price || !duration) {
@@ -122,7 +122,7 @@ const createService = async (req, res) => {
         price,
         duration,
         imageUrl,
-        iconUrl
+        iconUrl,...created
       },
     });
 
@@ -252,7 +252,7 @@ const updateService = async (req, res) => {
       price,
       duration,
       imageUrl,
-      iconUrl
+      iconUrl,...updates
     } = req.body;
 
     const service = await prisma.service.findUnique({
@@ -289,7 +289,7 @@ const updateService = async (req, res) => {
         price: price || service.price,
         duration: duration || service.duration,
         imageUrl: imageUrl || service.imageUrl,
-        iconUrl: iconUrl || service.iconUrl
+        iconUrl: iconUrl || service.iconUrl,...updates
       },
     });
 
