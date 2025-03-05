@@ -114,7 +114,10 @@ const login = async (req, res) => {
       });
     }
 
-    const user = await prisma.user.findUnique({ where: whereCondition });
+    const user = await prisma.user.findUnique({ where: whereCondition ,include:{
+      locations:true,
+      Worker:role === 'worker' ? true : false,
+    }});
 
     if (!user) {
       const message = await translate('Invalid email or phone or password or role', { to: lang });
