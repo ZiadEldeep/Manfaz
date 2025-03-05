@@ -114,7 +114,9 @@ const login = async (req, res) => {
       });
     }
 
-    const user = await prisma.user.findUnique({ where: whereCondition ,include:{
+    const user = await prisma.user.findUnique(
+      { where: whereCondition ,
+        include:{
       locations:true,
       Worker:role === 'worker' ? true : false,
     }});
