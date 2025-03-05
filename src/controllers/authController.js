@@ -156,7 +156,7 @@ const login = async (req, res) => {
     if (lang === 'en') {
       res.status(200).json({
         status: true,
-        message,
+        message: 'Login successful',
         code: 200,
         data: user,
       });
