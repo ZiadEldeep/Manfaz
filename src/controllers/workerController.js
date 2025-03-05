@@ -19,10 +19,9 @@ const getAllWorkers = async (req, res) => {
 
     // ترجمة جميع العمال في وقت واحد
     const translatedWorkers = await Promise.all(workers.map(async (worker) => {
-      const [translatedTitle, translatedDesc, translatedLoc, translatedSkills] = await Promise.all([
+      const [translatedTitle, translatedDesc, translatedSkills] = await Promise.all([
         translate(worker.title, { to: lang }),
         translate(worker.description, { to: lang }),
-        translate(worker.location, { to: lang }),
         Promise.all(worker.skills.map(skill => translate(skill, { to: lang })))
       ]);
 
@@ -30,7 +29,6 @@ const getAllWorkers = async (req, res) => {
         ...worker,
         title: translatedTitle,
         description: translatedDesc,
-        location: translatedLoc,
         skills: translatedSkills
       };
     }));
@@ -109,10 +107,9 @@ const createWorker = async (req, res) => {
     }
 
     // ترجمة البيانات للغة المطلوبة
-    const [transTitle, transDesc, transLoc, transSkills] = await Promise.all([
+    const [transTitle, transDesc, transSkills] = await Promise.all([
       translate(newWorker.title, { to: lang }),
       translate(newWorker.description, { to: lang }),
-      translate(newWorker.location, { to: lang }),
       Promise.all(newWorker.skills.map(skill => translate(skill, { to: lang })))
     ]);
 
@@ -124,7 +121,6 @@ const createWorker = async (req, res) => {
         ...newWorker,
         title: transTitle,
         description: transDesc,
-        location: transLoc,
         skills: transSkills
       }
     });
@@ -166,10 +162,9 @@ const getWorkerById = async (req, res) => {
     }
 
     // ترجمة جميع البيانات في وقت واحد
-    const [transTitle, transDesc, transLoc, transSkills] = await Promise.all([
+    const [transTitle, transDesc, transSkills] = await Promise.all([
       translate(worker.title, { to: lang }),
       translate(worker.description, { to: lang }),
-      translate(worker.location, { to: lang }),
       Promise.all(worker.skills.map(skill => translate(skill, { to: lang })))
     ]);
 
@@ -181,7 +176,6 @@ const getWorkerById = async (req, res) => {
         ...worker,
         title: transTitle,
         description: transDesc,
-        location: transLoc,
         skills: transSkills
       }
     });
@@ -256,7 +250,6 @@ const updateWorker = async (req, res) => {
         ...updatedWorker,
         title: finalTitle,
         description: finalDesc,
-        location: finalLoc,
         skills: finalSkills
       }
     });
