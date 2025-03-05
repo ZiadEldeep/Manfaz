@@ -171,7 +171,7 @@ model Order {
   imageUrl     String?
   locationId   String @db.ObjectId
   location     UserLocation? @relation(fields: [locationId], references: [id])
-  notes        String
+  notes        String?
   price        Float?
   duration     Int?
   status       OrderStatus     @default(pending) // "pending", "in_progress", "completed", "canceled"

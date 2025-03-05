@@ -95,6 +95,7 @@ const createOrder = async (req, res) => {
       totalAmount,
       type,
       description,
+      notes,
       imageUrl,
       locationId,
       price,
@@ -141,9 +142,9 @@ const createOrder = async (req, res) => {
       }
 
       // ترجمة الحقول النصية إلى الإنجليزية
-      const [translatedDesc] = await Promise.all([
+      const [translatedDesc,notesTranslated] = await Promise.all([
         translate(description, { to: "en" }),
-        translate(address, { to: "en" })
+        translate(notes, { to: "en" })
       ]);
 
       const newOrder = await prisma.order.create({
@@ -153,6 +154,7 @@ const createOrder = async (req, res) => {
           providerId,
           totalAmount,
           description: translatedDesc,
+          notes:notesTranslated,
           imageUrl,
           locationId,
           price,
@@ -173,9 +175,9 @@ const createOrder = async (req, res) => {
       }
 
       // ترجمة البيانات للغة المطلوبة
-      const [finalDesc] = await Promise.all([
+      const [finalDesc, finalNotes] = await Promise.all([
         translate(newOrder.description, { to: lang }),
-        translate(newOrder.address, { to: lang })
+        translate(newOrder.notes, { to: lang })
       ]);
 
       res.status(201).json({
@@ -185,6 +187,7 @@ const createOrder = async (req, res) => {
         data: {
           ...newOrder,
           description: finalDesc,
+          notes: finalNotes
         }
       });
     }else{
@@ -194,9 +197,9 @@ const createOrder = async (req, res) => {
       }
 
       // ترجمة الحقول النصية إلى الإنجليزية
-      const [translatedDesc] = await Promise.all([
+      const [translatedDesc,notesTranslated] = await Promise.all([
         translate(description, { to: "en" }),
-        translate(address, { to: "en" })
+        translate(notes, { to: "en" })
       ]);
 
       const newOrder = await prisma.order.create({
@@ -205,6 +208,7 @@ const createOrder = async (req, res) => {
           storeId:service.id,
           totalAmount,
           description: translatedDesc,
+          notes:notesTranslated,
           imageUrl,
           locationId,
           price,
@@ -225,9 +229,9 @@ const createOrder = async (req, res) => {
       }
 
       // ترجمة البيانات للغة المطلوبة
-      const [finalDesc, finalAddress] = await Promise.all([
+      const [finalDesc, finalNotes] = await Promise.all([
         translate(newOrder.description, { to: lang }),
-        translate(newOrder.address, { to: lang })
+        translate(newOrder.notes, { to: lang })
       ]);
 
       res.status(201).json({
@@ -237,7 +241,7 @@ const createOrder = async (req, res) => {
         data: {
           ...newOrder,
           description: finalDesc,
-          address: finalAddress
+          notes: finalNotes
         }
       });
 
