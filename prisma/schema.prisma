@@ -101,7 +101,7 @@ model ServiceParameter {
   name        String     // اسم المعيار
   description String?    // وصف المعيار
   imageUrl    String?    // صورة توضيحية
-  iconUrl    String?    // صورة توضيحية
+  iconUrl    String?    @default("https://res.cloudinary.com/dixa9yvlz/image/upload/v1741301304/Manfaz/default-service-icon.png")
   price       Float      // السعر
   warranty    Int?       // فترة الضمان بالأيام
   installmentAvailable Boolean @default(false) // هل متاح التقسيط
