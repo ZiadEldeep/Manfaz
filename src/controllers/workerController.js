@@ -200,7 +200,7 @@ const updateWorker = async (req, res) => {
     const { id } = req.params;
     const { title, description, skills, hourlyRate, isVerified,totalJobsDone,about,
       experiences ,
-      reviews  } = req.body;
+      reviews ,userId } = req.body;
 
     if (!id) {
       const message = await translate('id is required', { to: lang });
@@ -237,18 +237,24 @@ const updateWorker = async (req, res) => {
       })
       
     }
-    if (reviews) {
+    if (reviews && userId) {
+      let user = await prisma.user.findUnique({
+        where:{id:userId,role:"user"}
+      })
+      if (!user) {
+        const message = await translate('User not found', { to: lang });
+        return res.status(404).json({ status: false, message, code: 404, data: null });
+        
+      }
       let reviewTranslated=await Promise.all(reviews.map(r=>{
-        let [message,rate,workerId]= Promise.all([
-          translate(r.message, { to: "en" }),
-          translate(r.rate, { to: "en" }),
-          translate(r.workerId, { to: "en" })
+        let [comment]= Promise.all([
+          translate(r.comment , { to: "en" }),
         ])
         return {
           ...r,
-          message,
-          rate,
-          workerId
+          comment,
+          workerId:id,
+          userId,
         }
       }))
       await prisma.review.createMany({
