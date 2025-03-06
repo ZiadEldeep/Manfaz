@@ -198,7 +198,9 @@ const updateWorker = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-    const { title, description, skills, hourlyRate } = req.body;
+    const { title, description, skills, hourlyRate, isVerified,totalJobsDone,about,
+      experiences ,
+      reviews  } = req.body;
 
     if (!id) {
       const message = await translate('id is required', { to: lang });
@@ -213,7 +215,47 @@ const updateWorker = async (req, res) => {
       const message = await translate('Worker not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
-
+    if (experiences) {
+      let experienceTranslated=await Promise.all(experiences.map(e=>{
+        let [title,description,company,duration]= Promise.all([
+          translate(e.title, { to: "en" }),
+          translate(e.description, { to: "en" }),
+          translate(e.company, { to: "en" }),
+          translate(e.duration,{to:"en"} )
+        ])
+        return {
+          ...e,
+          title,
+          workerId: id,
+          description,
+          company,
+          duration
+        }
+      }))
+      await prisma.workExperience.createMany({
+        data: experienceTranslated
+      })
+      
+    }
+    if (reviews) {
+      let reviewTranslated=await Promise.all(reviews.map(r=>{
+        let [message,rate,workerId]= Promise.all([
+          translate(r.message, { to: "en" }),
+          translate(r.rate, { to: "en" }),
+          translate(r.workerId, { to: "en" })
+        ])
+        return {
+          ...r,
+          message,
+          rate,
+          workerId
+        }
+      }))
+      await prisma.review.createMany({
+        data: reviewTranslated
+      })
+      
+    }
     // ترجمة جميع الحقول المحدثة في وقت واحد
     const [transTitle, transDesc, transSkills] = await Promise.all([
       title ? translate(title, { to: "en" }) : worker.title,
