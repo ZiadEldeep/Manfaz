@@ -224,9 +224,9 @@ const updateWorker = async (req, res) => {
           translate(e.duration,{to:"en"} )
         ])
         return {
+          workerId: id,
           ...e,
           title,
-          workerId: id,
           description,
           company,
           duration
@@ -293,9 +293,9 @@ const updateWorker = async (req, res) => {
 
     // ترجمة البيانات المحدثة للغة المطلوبة
     const [finalTitle, finalDesc, finalSkills] = await Promise.all([
-      translate(updatedWorker.title, { to: lang }),
-      translate(updatedWorker.description, { to: lang }),
-      Promise.all(updatedWorker.skills.map(skill => translate(skill, { to: lang })))
+      translate(updatedWorker.title, { to: "en" }),
+      translate(updatedWorker.description, { to: "en" }),
+      Promise.all(updatedWorker.skills.map(skill => translate(skill, { to: "en" })))
     ]);
 
     res.status(200).json({
