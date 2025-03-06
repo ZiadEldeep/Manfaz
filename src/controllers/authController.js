@@ -148,7 +148,7 @@ const login = async (req, res) => {
         where: { id: user.id },
         data: { verificationCode }
       });
-      await sendConfirmationEmail(user.email, verificationCode);
+      // await sendConfirmationEmail(user.email, verificationCode);
       const message = await translate('Account not verified', { to: lang });
       return res.status(200).json({
         status: false,

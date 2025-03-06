@@ -4,7 +4,7 @@ const translate = require('translate-google');
 const getAllWorkers = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
-    const workers = await prisma.worker.findMany();
+    const workers = await prisma.worker.findMany({include: { user: true }});
     const message = await translate('Workers retrieved successfully', { to: lang });
 
     if (lang === 'en') {
