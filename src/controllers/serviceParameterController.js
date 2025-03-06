@@ -92,7 +92,8 @@ const createServiceParameter = async (req, res) => {
       status,
       sortOrder,
       faqs,
-      whatIncluded
+      whatIncluded,
+      iconUrl
     } = req.body;
 
     if (!name || !price || !serviceId) {
@@ -136,7 +137,8 @@ const createServiceParameter = async (req, res) => {
         status: status || 'active',
         sortOrder: sortOrder || 0,
         faqs: translatedFaqs,
-        whatIncluded: translatedWhatIncluded
+        whatIncluded: translatedWhatIncluded,
+        iconUrl
       },
     });
 
@@ -258,6 +260,7 @@ const updateServiceParameter = async (req, res) => {
       status,
       sortOrder,
       faqs,
+      iconUrl,
       whatIncluded
     } = req.body;
 
@@ -288,6 +291,7 @@ const updateServiceParameter = async (req, res) => {
       data: {
         name: translatedName,
         description: translatedDesc,
+        iconUrl: iconUrl || parameter.iconUrl,
         imageUrl: imageUrl || parameter.imageUrl,
         price: price || parameter.price,
         warranty: warranty || parameter.warranty,
