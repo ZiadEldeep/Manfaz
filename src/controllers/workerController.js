@@ -1,10 +1,17 @@
+const { tr } = require('translate-google/languages');
 const prisma = require('../prismaClient');
 const translate = require('translate-google');
 // Get All Workers
 const getAllWorkers = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
-    const workers = await prisma.worker.findMany({include: { user: true }});
+    const workers = await prisma.worker.findMany({include: { user: {
+      select: {
+        id: true,
+        name: true,
+        locations: true,
+      },
+    } }});
     const message = await translate('Workers retrieved successfully', { to: lang });
 
     if (lang === 'en') {
@@ -137,6 +144,7 @@ const getWorkerById = async (req, res) => {
     const { id } = req.params;
     const worker = await prisma.worker.findUnique({
       where: { id },
+      include: { user:true }
     });
 
     if (!worker) { 
