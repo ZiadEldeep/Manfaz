@@ -10,6 +10,7 @@ const {
 
 const router = express.Router();
 
+// store working hours
 router.get('/stores/:storeId/working-hours', getStoreWorkingHours);
 router.post('/stores/:storeId/working-hours', setStoreWorkingHours);
 router.put('/stores/:storeId/working-hours/:dayOfWeek', updateWorkingHours);

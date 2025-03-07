@@ -9,6 +9,7 @@ const {
 
 const router = express.Router();
 
+// User Locations
 router.get('/users/:userId/locations', getUserLocations);
 router.post('/users/:userId/locations', createUserLocation);
 router.put('/locations/:id', updateUserLocation);

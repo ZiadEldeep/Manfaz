@@ -8,7 +8,7 @@ const {
 } = require('../controllers/serviceController');
 
 const router = express.Router();
-
+// services
 router.get('/', getAllServices);
 router.post('/', createService);
 router.get('/:id', getServiceById);

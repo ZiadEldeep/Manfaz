@@ -3,12 +3,17 @@ const { sendConfirmationEmail } = require('../utils/email');
 const { generateVerificationCode } = require('../utils/helpers');
 const translate = require('translate-google');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 // Register a new user
+
+const generateAccessToken = (user) => jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '15m' });
+const generateRefreshToken = (user) => jwt.sign(user, process.env.REFRESH_SECRET, { expiresIn: '7d' });
+
 const register = async (req, res) => {
   const lang = req.query.lang || 'en';
 
   try {
-    const { name, email, phone, password, role, token } = req.body;
+    const { name, email, phone, password, role } = req.body;
 
     if (!name || !email || !phone || !password || !role) {
       const message = await translate('name, password, email  phone  role are required', { to: lang });
@@ -46,7 +51,6 @@ const register = async (req, res) => {
         phone,
         password: hashedPassword,
         verificationCode,
-        token,
         role
       },
     });
@@ -56,18 +60,21 @@ const register = async (req, res) => {
     }
 
     const message = await translate('Registration successful. Verification code sent.', { to: lang });
-
+    const refreshToken = generateRefreshToken(newUser);
+    const token = generateAccessToken(newUser);
     if (lang === 'en') {
+      res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
       res.status(201).json({
         status: true,
         message,
         code: 201,
         data: newUser,
+        token,
       });
       return;
     }
 
-
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
     res.status(201).json({
       status: true,
       message,
@@ -75,6 +82,7 @@ const register = async (req, res) => {
       data: {
         ...newUser,
       },
+      token,
     });
   } catch (error) {
     const message = await translate(`Internal server error: ${error.message}`, { to: lang });
@@ -148,26 +156,32 @@ const login = async (req, res) => {
         where: { id: user.id },
         data: { verificationCode }
       });
+      const refreshToken = generateRefreshToken(user2);
+      const token = generateAccessToken(user2);
       // await sendConfirmationEmail(user.email, verificationCode);
       const message = await translate('Account not verified', { to: lang });
+      res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
       return res.status(200).json({
         status: false,
         message,
         code: 200,
         data: user2,
+        token
       });
     }
     if (lang === 'en') {
+      res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
       res.status(200).json({
         status: true,
         message: 'Login successful',
         code: 200,
         data: user,
+        token
       });
       return;
     }
 
-
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
     res.status(200).json({
       status: true,
       message,
@@ -358,5 +372,39 @@ const verifyAccount = async (req, res) => {
   }
 };
 
+// تجديد التوكن
+const refresh = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  const refreshToken = req.cookies.refreshToken;
+  let message = await translate("Unauthorized", { to: lang });
+  if (!refreshToken) return res.status(401).json({ 
+    status: false,
+    message,
+    code: 401,
+    data: null
+   });
 
-module.exports = { register, login, changePassword, resendVerificationCode, verifyAccount };
+  let  messageError = await translate("Forbidden", { to: lang });
+  let  messageSuccess = await translate("Token refreshed successfully", { to: lang });
+  jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, user) => {
+    if (err){ 
+      return res.status(403).json({ 
+        status: false,
+        message: messageError,
+        code: 403,
+        data: null
+       });
+    }
+
+    const newAccessToken = generateAccessToken({ id: user.id, username: user.username });
+    res.json({ 
+      status: true,
+      message: messageSuccess,
+      code: 200,
+      token: newAccessToken 
+    });
+  });
+};
+
+
+module.exports = { register, login, changePassword, resendVerificationCode, verifyAccount, refresh };

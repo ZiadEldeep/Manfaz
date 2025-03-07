@@ -28,6 +28,7 @@ const {
 const router = express.Router();
 
 // المتاجر
+// stores
 router.get('/', getAllStores);
 router.get('/:id', getStoreById);
 router.post('/', createStore);
