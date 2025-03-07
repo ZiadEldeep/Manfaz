@@ -211,7 +211,7 @@ const login = async (req, res) => {
   const lang = req.query.lang || "en";
   try {
     // التحقق من وجود إما البريد الإلكتروني أو رقم الهاتف
-    const { email, password, phone, role, isVerified } = req.body;
+    const { email, password, phone, role, isActive } = req.body;
     let whereCondition;
     if (email) {
       whereCondition = { email };
@@ -254,7 +254,7 @@ const login = async (req, res) => {
         data: null,
       });
     }
-    const passwordMatch = isVerified
+    const passwordMatch = isActive
       ? password === employee.password
       : await bcrypt.compare(password, employee.password);
     if (!passwordMatch) {
