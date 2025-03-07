@@ -165,6 +165,8 @@ model Review {
   worker         Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
   userId         String   @db.ObjectId
   user           User     @relation(fields: [userId], references: [id])
+  orderId        String   @db.ObjectId
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   rating         Float
   comment        String
 
@@ -212,6 +214,8 @@ model Order {
   updatedAt    DateTime   @updatedAt 
   storeId      String?    @db.ObjectId  // إضافة هذا الحقل
   store        Store?     @relation(fields: [storeId], references: [id])
+
+  Review Review[]
 }
 
 enum OrderStatus {

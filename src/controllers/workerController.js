@@ -355,6 +355,7 @@ const getAllReviews = async (req, res) => {
       include: {
         worker: true,
         user: true,
+        order: true
       },
     });
     res.status(200).json({
@@ -373,13 +374,50 @@ const getAllReviews = async (req, res) => {
 const createReview = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
-    const { workerId, rating, comment, userId } = req.body;
+    const { workerId, rating, comment, userId, orderId } = req.body;
+    const worker = await prisma.worker.findUnique({
+      where: { id: workerId },
+    });
+    if (!worker) {
+      const message = await translate('Worker not found', { to: lang });
+      return res.status(404).json({
+        status: false,
+        message,
+        code: 404,
+        data: null,
+      });
+    }
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!order) {
+      const message = await translate('Order not found', { to: lang });
+      return res.status(404).json({
+        status: false,
+        message,
+        code: 404,
+        data: null,
+      });
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      const message = await translate('User not found', { to: lang });
+      return res.status(404).json({
+        status: false,
+        message,
+        code: 404,
+        data: null,
+      });
+    }
     await prisma.review.create({
       data: {
         workerId,
         rating,
         comment,
         userId,
+        orderId,
       },
     });
     const message = await translate('Review created successfully', { to: lang });
@@ -403,6 +441,11 @@ const updateReview = async (req, res) => {
     const review = await prisma.review.update({
       where: { id },
       data: req.body,
+      include: {
+        worker: true,
+        user: true,
+        order: true
+      },
     });
     const message = await translate('Review updated successfully', { to: lang });
     res.status(200).json({
