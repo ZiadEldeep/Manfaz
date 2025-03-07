@@ -9,7 +9,7 @@ const generateRefreshToken = (user) => jwt.sign(user, process.env.REFRESH_SECRET
 
 
 const register = async (req, res) => {
-    const lang = req.query.lang || 'en';
+    const lang = req.query.lang || 'ar';
   
     try {
       const { name, email, phone, password, role } = req.body;
@@ -39,7 +39,89 @@ const register = async (req, res) => {
           data: null,
         });
       }
+      if(role !== 'admin'){
+        const message = await translate('Only admin can register', { to: lang });
+        return res.status(401).json({
+          status: false,
+          message,
+          code: 401,
+          data: null,
+        });
+      }
+      if(role === 'admin'){
+        const verificationCode = generateVerificationCode();
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        const newUser = await prisma.employee.create({
+          data: {
+            name,
+            email,
+            phone,
+            password: hashedPassword,
+            verificationCode,
+            role,
+            prermissions:{
+              create: {
+                viewOrders:true,
+                updateOrders:true,
+                deleteOrders:true,
+                viewCustomers:true,
+                updateCustomers:true,
+                viewServices:true,
+createServices:true,
+updateServices:true,
+deleteServices:true,
+viewOffers:true,
+createOffers:true,
+updateOffers:true,
+deleteOffers:true,
+viewCategories:true,
+createCategories:true,
+updateCategories:true,
+deleteCategories:true,
+viewStores:true,
+createStores:true,
+updateStores:true,
+deleteStores:true,
+viewProviders:true,
+approveProviders:true,
+updateProviders:true,
+deleteProviders:true,
+viewWallets:true,
+manageTransactions:true,
+viewBasicReports:true,
+viewAdvancedReports:true,
+exportReports:true,
+viewEmployees:true,
+createEmployees:true,
+updateEmployees:true,
+deleteEmployees:true,
+managePermissions:true,
+manageSettings:true,
+viewAuditLogs:true,
+manageBackups:true
+              },}
+          },
+        });
+
+      if (email) {
+        await sendConfirmationEmail(email, verificationCode);
+      }
   
+      const message = await translate('Registration successful. Verification code sent.', { to: lang });
+      const refreshToken = generateRefreshToken(newUser);
+      const token = generateAccessToken(newUser);
+
+        res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
+        res.status(201).json({
+          status: true,
+          message,
+          code: 201,
+          data: newUser,
+          token,
+        });
+        return;
+      }
       const verificationCode = generateVerificationCode();
       const hashedPassword = await bcrypt.hash(password, 10);
   
@@ -72,7 +154,6 @@ const register = async (req, res) => {
         });
         return;
       }
-  
       res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
       res.status(201).json({
         status: true,

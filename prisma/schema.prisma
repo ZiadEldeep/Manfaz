@@ -477,10 +477,11 @@ model Employee {
   email       String              @unique
   phone       String              @unique
   password    String
-  imageUrl    String?
+  imageUrl    String?             @default("https://res.cloudinary.com/dixa9yvlz/image/upload/v1741264530/Manfaz/default-profile.jpg")
+  verificationCode String
   role        EmployeeRole
   permissions EmployeePermissions @relation(fields: [permissionsId], references: [id])
-  permissionsId String @unique
+  permissionsId String @db.ObjectId @unique
   isActive    Boolean             @default(true)
   lastLoginAt DateTime?
   activities  EmployeeActivity[]
