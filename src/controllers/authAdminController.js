@@ -272,8 +272,8 @@ const login = async (req, res) => {
         where: { id: employee.id },
         data: { verificationCode },
       });
-      const refreshToken = generateRefreshToken(user2);
-      const token = generateAccessToken(user2);
+      const refreshToken = generateRefreshToken(employee2);
+      const token = generateAccessToken(employee2);
       // await sendConfirmationEmail(user.email, verificationCode);
       const message = await translate("Account not verified", { to: lang });
       res.cookie("refreshToken", refreshToken, {
@@ -285,7 +285,7 @@ const login = async (req, res) => {
         status: false,
         message,
         code: 200,
-        data: user2,
+        data: employee2,
         token,
       });
     }
@@ -299,12 +299,13 @@ const login = async (req, res) => {
         status: true,
         message: "Login successful",
         code: 200,
-        data: user,
+        data: employee,
         token,
       });
       return;
     }
-
+    const refreshToken = generateRefreshToken(employee);
+    const token = generateAccessToken(employee);
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
@@ -315,8 +316,9 @@ const login = async (req, res) => {
       message,
       code: 200,
       data: {
-        ...user,
+        ...employee,
       },
+      token,
     });
   } catch (error) {
     const message = await translate(`Internal server error: ${error.message}`, {
