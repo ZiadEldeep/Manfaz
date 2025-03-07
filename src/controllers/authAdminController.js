@@ -120,7 +120,7 @@ const register = async (req, res) => {
         { to: lang }
       );
       const refreshToken = generateRefreshToken(newUser);
-      const token = generateAccessToken(newUser);
+      const accessToken = generateAccessToken(newUser);
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
@@ -132,7 +132,8 @@ const register = async (req, res) => {
         message,
         code: 201,
         data: newUser,
-        token,
+        accessToken,
+        refreshToken
       });
       return;
     }
@@ -159,7 +160,7 @@ const register = async (req, res) => {
       { to: lang }
     );
     const refreshToken = generateRefreshToken(newUser);
-    const token = generateAccessToken(newUser);
+    const accessToken = generateAccessToken(newUser);
     if (lang === "en") {
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
@@ -171,7 +172,8 @@ const register = async (req, res) => {
         message,
         code: 201,
         data: newUser,
-        token,
+        accessToken,
+        refreshToken,
       });
       return;
     }
@@ -187,7 +189,8 @@ const register = async (req, res) => {
       data: {
         ...newUser,
       },
-      token,
+      accessToken,
+      refreshToken,
     });
   } catch (error) {
     const message = await translate(`Internal server error: ${error.message}`, {
@@ -273,7 +276,7 @@ const login = async (req, res) => {
         data: { verificationCode },
       });
       const refreshToken = generateRefreshToken(employee2);
-      const token = generateAccessToken(employee2);
+      const accessToken = generateAccessToken(employee2);
       // await sendConfirmationEmail(user.email, verificationCode);
       const message = await translate("Account not verified", { to: lang });
       res.cookie("refreshToken", refreshToken, {
@@ -286,11 +289,12 @@ const login = async (req, res) => {
         message,
         code: 200,
         data: employee2,
-        token,
+        accessToken,
+        refreshToken,
       });
     }
     const refreshToken2 = generateRefreshToken(employee);
-    const token2 = generateAccessToken(employee);
+    const accessToken2 = generateAccessToken(employee);
     if (lang === "en") {
       res.cookie("refreshToken", refreshToken2, {
         httpOnly: true,
@@ -302,7 +306,8 @@ const login = async (req, res) => {
         message: "Login successful",
         code: 200,
         data: employee,
-        token: token2,
+        accessToken: accessToken2,
+        refreshToken: refreshToken2,
       });
       return;
     }
@@ -318,7 +323,8 @@ const login = async (req, res) => {
       data: {
         ...employee,
       },
-      token: token2,
+      accessToken: accessToken2,
+      refreshToken: refreshToken2,
     });
   } catch (error) {
     const message = await translate(`Internal server error: ${error.message}`, {
@@ -557,7 +563,8 @@ const refresh = async (req, res) => {
       status: true,
       message: messageSuccess,
       code: 200,
-      token: newAccessToken,
+      accessToken: newAccessToken,
+      refreshToken,
     });
   });
 };
