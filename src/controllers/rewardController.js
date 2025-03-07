@@ -329,6 +329,51 @@ const getUserRewards = async (req, res) => {
   }
 };
 
+// تحديث مكافآت
+const updateReward = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { id } = req.params;
+    const reward = await prisma.reward.update({
+      where: { id },
+      data: req.body
+    });
+
+    const message = await translate('Reward updated successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: reward
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// حذف مكافآت
+const deleteReward = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { id } = req.params;
+    const reward = await prisma.reward.delete({
+      where: { id }
+    });
+
+    const message = await translate('Reward deleted successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: reward
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
 
 module.exports = {
   createGiftCard,
@@ -338,5 +383,7 @@ module.exports = {
   createReward,
   getRewards,
   redeemReward,
-  getUserRewards
+  getUserRewards,
+  updateReward,
+  deleteReward
 }; 

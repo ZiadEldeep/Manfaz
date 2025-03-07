@@ -7,7 +7,9 @@ const {
   createReward,
   getRewards,
   redeemReward,
-  getUserRewards
+  getUserRewards,
+  updateReward,
+  deleteReward
 } = require('../controllers/rewardController');
 
 const router = express.Router();
@@ -23,5 +25,7 @@ router.post('/rewards', createReward);
 router.get('/stores/:storeId/rewards', getRewards);
 router.post('/rewards/:id/redeem', redeemReward);
 router.get('/users/:userId/rewards', getUserRewards);
+router.put('/rewards/:id', updateReward);
+router.delete('/rewards/:id', deleteReward);
 
 module.exports = router; 
