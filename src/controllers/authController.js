@@ -169,6 +169,8 @@ const login = async (req, res) => {
         token
       });
     }
+    const refreshToken = generateRefreshToken(user);
+      const token = generateAccessToken(user);
     if (lang === 'en') {
       res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
       res.status(200).json({
