@@ -235,8 +235,7 @@ const login = async (req, res) => {
     const employee = await prisma.employee.findUnique({
       where: whereCondition,
       include: {
-        locations: true,
-        Worker: role === "worker" ? true : false,
+        permissions: true,
       },
     });
 
