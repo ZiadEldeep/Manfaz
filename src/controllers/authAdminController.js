@@ -289,8 +289,10 @@ const login = async (req, res) => {
         token,
       });
     }
+    const refreshToken2 = generateRefreshToken(employee);
+    const token2 = generateAccessToken(employee);
     if (lang === "en") {
-      res.cookie("refreshToken", refreshToken, {
+      res.cookie("refreshToken", refreshToken2, {
         httpOnly: true,
         secure: true,
         sameSite: "Strict",
@@ -300,13 +302,11 @@ const login = async (req, res) => {
         message: "Login successful",
         code: 200,
         data: employee,
-        token,
+        token: token2,
       });
       return;
     }
-    const refreshToken = generateRefreshToken(employee);
-    const token = generateAccessToken(employee);
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie("refreshToken", refreshToken2, {
       httpOnly: true,
       secure: true,
       sameSite: "Strict",
@@ -318,7 +318,7 @@ const login = async (req, res) => {
       data: {
         ...employee,
       },
-      token,
+      token: token2,
     });
   } catch (error) {
     const message = await translate(`Internal server error: ${error.message}`, {
