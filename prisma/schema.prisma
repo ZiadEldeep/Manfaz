@@ -478,7 +478,7 @@ model Employee {
   phone       String              @unique
   password    String
   imageUrl    String?             @default("https://res.cloudinary.com/dixa9yvlz/image/upload/v1741264530/Manfaz/default-profile.jpg")
-  verificationCode String
+  verificationCode Int
   role        EmployeeRole
   permissions EmployeePermissions @relation(fields: [permissionsId], references: [id])
   permissionsId String @db.ObjectId @unique
