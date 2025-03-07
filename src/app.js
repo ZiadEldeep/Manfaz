@@ -4,6 +4,7 @@ const cors = require('cors');
 
 // Import Routes
 const userRoutes = require('./routes/userRoutes');
+const authAdminController = require('./routes/authAdminRoutes.js');
 const categoryRoutes = require('./routes/categoryRoutes');
 const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
@@ -25,6 +26,7 @@ app.use(cors({credentials: true}));
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/auth-admin', authAdminController);
 app.use('/users', userRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/services', serviceRoutes);
