@@ -16,6 +16,7 @@ const rewardRoutes = require('./routes/rewardRoutes');
 const storeWorkingHoursRoutes = require('./routes/storeWorkingHoursRoutes');
 const userLocationRoutes = require('./routes/userLocationRoutes');
 const employeeRoutes = require('./routes/employeeRoutes.js');
+const employeeActivitiesRoutes = require('./routes/employeeActivitiesRoutes.js');
 const app = express();
 
 // Middleware
@@ -36,6 +37,7 @@ app.use('/rewards', rewardRoutes);
 app.use('/store-working-hours', storeWorkingHoursRoutes);
 app.use('/user-locations', userLocationRoutes);
 app.use('/employees', employeeRoutes);
+app.use('/employees-activities', employeeActivitiesRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 3003;
