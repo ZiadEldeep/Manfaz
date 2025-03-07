@@ -1,10 +1,10 @@
 const express = require('express');
-const { protect } = require('../middleware/authMiddleware'); // Ensure to use your authentication middleware
+const  protect  = require('../middleware/authAdminMiddleware'); // Ensure to use your authentication middleware
 const {
   getAllActivities,
   getActivitiesByEmployee,
   getAuditLogs
-} = require('../controllers/employeeActivitiesController'); // Create this controller
+} = require('../controllers/employeeActivitiesController'); // Ensure this controller is created
 
 const router = express.Router();
 
