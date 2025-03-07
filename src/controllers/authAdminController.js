@@ -5,7 +5,7 @@ const translate = require("translate-google"); // Assuming you are using this fo
 const { sendConfirmationEmail } = require("../utils/email");
 const { generateVerificationCode } = require("../utils/helpers");
 const generateAccessToken = (user) =>
-  jwt.sign(user, process.env.ACCESS_SECRET_ADMIN, { expiresIn: "15m" });
+  jwt.sign(user, process.env.ACCESS_SECRET_ADMIN, { expiresIn: "1h" });
 const generateRefreshToken = (user) =>
   jwt.sign(user, process.env.REFRESH_SECRET_ADMIN, { expiresIn: "7d" });
 
