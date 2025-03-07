@@ -344,4 +344,98 @@ const deleteWorker = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
-module.exports = { getAllWorkers, createWorker, getWorkerById, updateWorker, deleteWorker };
+
+// Get All Reviews
+const getAllReviews = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  try {
+    const { workerId } = req.params;
+    const reviews = await prisma.review.findMany({
+      where: { workerId },
+      include: {
+        worker: true,
+        user: true,
+      },
+    });
+    res.status(200).json({
+      status: true,
+      message: await translate('Reviews retrieved successfully', { to: lang }),
+      code: 200,
+      data: reviews,
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// Create Review
+const createReview = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  try {
+    const { workerId, rating, comment, userId } = req.body;
+    await prisma.review.create({
+      data: {
+        workerId,
+        rating,
+        comment,
+        userId,
+      },
+    });
+    const message = await translate('Review created successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: null,
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// Update Review
+const updateReview = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  try {
+    const { id } = req.params;
+    const review = await prisma.review.update({
+      where: { id },
+      data: req.body,
+    });
+    const message = await translate('Review updated successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: review,
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// Delete Review
+const deleteReview = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  try {
+    const { id } = req.params;
+    await prisma.review.delete({
+      where: { id },
+    });
+    const message = await translate('Review deleted successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: null,
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+module.exports = { getAllWorkers, createWorker, getWorkerById, updateWorker, deleteWorker, getAllReviews, createReview, updateReview, deleteReview };
