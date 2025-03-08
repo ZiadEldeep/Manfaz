@@ -11,9 +11,8 @@ const getAllOrders = async (req, res) => {
   if (searchTranslated) {
     searchCondition = {
       OR: [
-        { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
-        { address: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
-        { store: { name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } } }
+        { location: { address: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } } },
+        { store: { products: { some: { product: { name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } } } } } }
       ]
     };
   }
@@ -35,7 +34,8 @@ const getAllOrders = async (req, res) => {
         provider: true,
         deliveryDriver: true,
         store: true,
-        user: true
+        user: true,
+        location: true
       },
       skip,
       take: +limit
@@ -52,16 +52,13 @@ const getAllOrders = async (req, res) => {
       return;
     }
 
-    // ترجمة جميع الطلبات في وقت واحد
     const translatedOrders = await Promise.all(orders.map(async (order) => {
-      const [translatedDesc, translatedAddress] = await Promise.all([
-        order.description ? translate(order.description, { to: lang }) : null,
-        order.address ? translate(order.address, { to: lang }) : null
+      const [ translatedAddress] = await Promise.all([
+        order.address ? translate(order.location.address, { to: lang }) : null
       ]);
 
       return {
         ...order,
-        description: translatedDesc,
         address: translatedAddress
       };
     }));
@@ -94,7 +91,6 @@ const createOrder = async (req, res) => {
       deliveryDriverId,
       totalAmount,
       type,
-      description,
       notes,
       imageUrl,
       locationId,
@@ -107,14 +103,13 @@ const createOrder = async (req, res) => {
 
     const service =type === "service" ? await prisma.serviceParameter.findUnique({
       where: { id: serviceId },
-    }):type === "dilivery" ? await prisma.store.findUnique({
-      where: { id: serviceId },
     }):null;
 
-    if (!service) {
+    if (!service && type === "service") {
       const message = await translate('Service not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
+
     const user = await prisma.user.findUnique({
       where: { id: userId,role:"user" },
     });
@@ -144,21 +139,23 @@ const createOrder = async (req, res) => {
       }
 
       // ترجمة الحقول النصية إلى الإنجليزية
-      const [translatedDesc,notesTranslated] = await Promise.all([
-        translate(description, { to: "en" }),
+      const [notesTranslated] = await Promise.all([
         translate(notes, { to: "en" })
       ]);
 
       const newOrder = await prisma.order.create({
         data: {
-          userId,
+          user: {
+            connect: { id: user.id } // Connect the user by their ID
+          },
           serviceId,
           providerId,
           totalAmount,
-          description: translatedDesc,
           notes:notesTranslated,
           imageUrl,
-          locationId,
+          location: {
+            connect: { id: location.id } // Connect the location by their ID
+          },
           price,
           duration,...createOrderData,
           paymentMethod
@@ -178,8 +175,7 @@ const createOrder = async (req, res) => {
       }
 
       // ترجمة البيانات للغة المطلوبة
-      const [finalDesc, finalNotes] = await Promise.all([
-        translate(newOrder.description, { to: lang }),
+      const [finalNotes] = await Promise.all([
         translate(newOrder.notes, { to: lang })
       ]);
 
@@ -189,30 +185,32 @@ const createOrder = async (req, res) => {
         code: 201,
         data: {
           ...newOrder,
-          description: finalDesc,
+
           notes: finalNotes
         }
       });
-    }else{
+    }else if (type === "delivery"){
       if (!userId  || !totalAmount  || !price || !paymentMethod ) {
         const message = await translate('All fields are required', { to: lang });
         return res.status(400).json({ status: false, message, code: 400, data: null });
       }
 
       // ترجمة الحقول النصية إلى الإنجليزية
-      const [translatedDesc,notesTranslated] = await Promise.all([
-        translate(description, { to: "en" }),
+      const [notesTranslated] = await Promise.all([
         translate(notes, { to: "en" })
       ]);
 
       const newOrder = await prisma.order.create({
         data: {
-          userId,
+          user: {
+            connect: { id: user.id } // Connect the user by their ID
+          },
           totalAmount,
-          description: translatedDesc,
           notes:notesTranslated,
           imageUrl,
-          locationId,
+          location: {
+            connect: { id: location.id } // Connect the location by their ID
+          },
           price,
           duration,...createOrderData,
           paymentMethod,
@@ -243,8 +241,7 @@ const createOrder = async (req, res) => {
       }
 
       // ترجمة البيانات للغة المطلوبة
-      const [finalDesc, finalNotes] = await Promise.all([
-        translate(newOrder.description, { to: lang }),
+      const [ finalNotes] = await Promise.all([
         translate(newOrder.notes, { to: lang })
       ]);
 
@@ -254,79 +251,11 @@ const createOrder = async (req, res) => {
         code: 201,
         data: {
           ...newOrder,
-          description: finalDesc,
           notes: finalNotes
         }
       });
 
     }
-    // else if (type === "delivery") {
-    //   // نفس المنطق السابق ولكن للتوصيل
-    //   if (!userId || !serviceId || !deliveryDriverId || !totalAmount || !description || !imageUrl || !address || !latitude || !longitude || !price || !duration) {
-    //     const message = await translate('All fields are required', { to: lang });
-    //     return res.status(400).json({ status: false, message, code: 400, data: null });
-    //   }
-
-    //   const deliveryDriver = await prisma.deliveryDriver.findUnique({
-    //     where: { id: deliveryDriverId },
-    //   });
-
-    //   if (!deliveryDriver) {
-    //     const message = await translate('Delivery driver not found', { to: lang });
-    //     return res.status(404).json({ status: false, message, code: 404, data: null });
-    //   }
-
-    //   // ترجمة الحقول النصية إلى الإنجليزية
-    //   const [translatedDesc, translatedAddress] = await Promise.all([
-    //     translate(description, { to: "en" }),
-    //     translate(address, { to: "en" })
-    //   ]);
-
-    //   const newOrder = await prisma.order.create({
-    //     data: {
-    //       userId,
-    //       serviceId,
-    //       deliveryDriverId,
-    //       totalAmount,
-    //       description: translatedDesc,
-    //       imageUrl,
-    //       address: translatedAddress,
-    //       latitude,
-    //       longitude,
-    //       price,
-    //       duration
-    //     },
-    //   });
-
-    //   const message = await translate('Order created successfully', { to: lang });
-
-    //   if (lang === 'en') {
-    //     res.status(201).json({
-    //       status: true,
-    //       message,
-    //       code: 201,
-    //       data: newOrder
-    //     });
-    //     return;
-    //   }
-
-    //   // ترجمة البيانات للغة المطلوبة
-    //   const [finalDesc, finalAddress] = await Promise.all([
-    //     translate(newOrder.description, { to: lang }),
-    //     translate(newOrder.address, { to: lang })
-    //   ]);
-
-    //   res.status(201).json({
-    //     status: true,
-    //     message,
-    //     code: 201,
-    //     data: {
-    //       ...newOrder,
-    //       description: finalDesc,
-    //       address: finalAddress
-    //     }
-    //   });
-    // }
   } catch (error) {
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });
@@ -365,8 +294,7 @@ const getOrderById = async (req, res) => {
     }
 
     // ترجمة البيانات للغة المطلوبة
-    const [translatedDesc, translatedAddress] = await Promise.all([
-      order.description ? translate(order.description, { to: lang }) : null,
+    const [translatedAddress] = await Promise.all([
       order.address ? translate(order.address, { to: lang }) : null
     ]);
 
@@ -376,7 +304,6 @@ const getOrderById = async (req, res) => {
       code: 200,
       data: {
         ...order,
-        description: translatedDesc,
         address: translatedAddress
       }
     });
@@ -392,8 +319,6 @@ const updateOrder = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      description,
-      address,
       status,
       totalAmount,
       paymentStatus,
@@ -410,22 +335,12 @@ const updateOrder = async (req, res) => {
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
 
-    // ترجمة الحقول النصية إلى الإنجليزية
-    const [translatedDesc, translatedAddress, translatedStatus, translatedPayStatus] = await Promise.all([
-      description ? translate(description, { to: "en" }) : order.description,
-      address ? translate(address, { to: "en" }) : order.address,
-      status ? translate(status, { to: "en" }) : order.status,
-      paymentStatus ? translate(paymentStatus, { to: "en" }) : order.paymentStatus
-    ]);
-
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: {
-        description: translatedDesc,
-        address: translatedAddress,
-        status: translatedStatus,
+        status,
         totalAmount: totalAmount || order.totalAmount,
-        paymentStatus: translatedPayStatus,
+        paymentStatus,
         price: price || order.price,
         duration: duration || order.duration
       },
@@ -443,13 +358,6 @@ const updateOrder = async (req, res) => {
       return;
     }
 
-    // ترجمة البيانات المحدثة للغة المطلوبة
-    const [finalDesc, finalAddress, finalStatus, finalPayStatus] = await Promise.all([
-      translate(updatedOrder.description, { to: lang }),
-      translate(updatedOrder.address, { to: lang }),
-      translate(updatedOrder.status, { to: lang }),
-      translate(updatedOrder.paymentStatus, { to: lang })
-    ]);
 
     res.status(200).json({
       status: true,
@@ -457,10 +365,6 @@ const updateOrder = async (req, res) => {
       code: 200,
       data: {
         ...updatedOrder,
-        description: finalDesc,
-        address: finalAddress,
-        status: finalStatus,
-        paymentStatus: finalPayStatus
       }
     });
   } catch (error) {

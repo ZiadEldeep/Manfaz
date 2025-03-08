@@ -262,16 +262,15 @@ model OrdersStore {
 }
 model Order {
   id           String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String     @db.ObjectId
+  userId       String?    @db.ObjectId
   user         User?      @relation(fields: [userId], references: [id])
-  serviceId    String     @db.ObjectId
+  serviceId    String?    @db.ObjectId
   service      Service?   @relation(fields: [serviceId], references: [id])
-  providerId   String     @db.ObjectId // العامل أو السائق
+  providerId   String?    @db.ObjectId // العامل أو السائق
   provider     Worker?    @relation(fields: [providerId], references: [id])
   deliveryDriverId String? @db.ObjectId // السائق
   deliveryDriver DeliveryDriver? @relation(fields: [deliveryDriverId], references: [id])
-  description  String?
-  locationId   String @db.ObjectId
+  locationId   String? @db.ObjectId
   location     UserLocation? @relation(fields: [locationId], references: [id])
   notes        String?
   price        Float?
