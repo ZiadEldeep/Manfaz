@@ -295,6 +295,7 @@ const login = async (req, res) => {
     }
     const refreshToken2 = generateRefreshToken(employee);
     const accessToken2 = generateAccessToken(employee);
+    let message = await translate("Login successful", { to: lang });
     if (lang === "en") {
       res.cookie("refreshToken", refreshToken2, {
         httpOnly: true,
@@ -303,7 +304,7 @@ const login = async (req, res) => {
       });
       res.status(200).json({
         status: true,
-        message: "Login successful",
+        message,
         code: 200,
         data: employee,
         accessToken: accessToken2,
