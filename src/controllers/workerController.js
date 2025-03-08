@@ -1,6 +1,7 @@
 const { tr } = require('translate-google/languages');
 const prisma = require('../prismaClient');
 const translate = require('translate-google');
+const { addDays, startOfMonth, endOfMonth } = require("date-fns");
 // Get All Workers
 const getAllWorkers = async (req, res) => {
   const lang = req.query.lang || 'en';
@@ -72,7 +73,24 @@ const createWorker = async (req, res) => {
       skills ,
       WorkerCategory
     } = req.body;
-
+    const currentDate = new Date();
+    const startMonth = startOfMonth(currentDate); // أول يوم في الشهر
+    const endMonth = endOfMonth(currentDate); // آخر يوم في الشهر
+  
+    const schedules = [];
+    for (let day = startMonth; day <= endMonth; day = addDays(day, 1)) {
+      schedules.push({
+        date: day,
+        scheduledTime: new Date(day.setHours(9, 0, 0, 0)), // بدء العمل الساعة 9 صباحًا
+        day: day.toLocaleDateString("en-US", { weekday: "long" }), // استخراج اسم اليوم (Monday, Tuesday...)
+        shiftType: "MORNING",
+        maxOrders: 10,
+        ordersCount: 0,
+        isFull: false,
+        status: "SCHEDULED",
+        priority: "MEDIUM",
+      });
+    }
     if (!userId || !title || !description || !hourlyRate || !skills) {
       const message = await translate('All required fields must be provided', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
@@ -113,13 +131,7 @@ const createWorker = async (req, res) => {
         },
         ScheduleOrder: {
           create: {
-            Schedule: {
-              create: {
-                days: [],
-                startTime: "",
-                endTime: "",
-              }
-            }
+            Schedule: schedules
           }
         }
       },
