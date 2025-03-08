@@ -84,23 +84,39 @@ async function checkPermissions(employeeId) {
 const getDashboardData = async (req, res) => {
   // Check permissions for the employee
   const employeeId = req.user.id; // Assuming user ID is stored in req.user
-  const hasPermission = await checkPermissions(employeeId); // Implement this function to check permissions
+//   const hasPermission = await checkPermissions(employeeId); // Implement this function to check permissions
 
-  if (!hasPermission) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
+//   if (!hasPermission) {
+//     return res.status(403).json({ message: "Forbidden" });
+//   }
+  let users=await prisma.user.count({
+    where: {
+      role: "user",
+    },
+  });
+  let workers=await prisma.worker.count();
+  let drivers=await prisma.deliveryDriver.count();
+  let orders=await prisma.order.count();
+  let revenue=await prisma.order.sum({
+    where: {
+      status: "completed",
+    },
+    select: {
+      price: true,
+    },
+  });
+  revenue=revenue.price;
+  let stores=await prisma.store.count();
+  let categories=await prisma.category.count();
+  let services=await prisma.service.count();
+  let offers=await prisma.offer.count();
+  let wallets=await prisma.wallet.count();
+  let employees=await prisma.employee.count();
 
   const stats = await getDashboardStats();
 
-  const {
-    users = 0,
-    workers = 0,
-    drivers = 0,
-    orders = 0,
-    revenue = 0,
-  } = stats;
 
-  return res.json({ users, workers, drivers, orders, revenue });
+  return res.json({ users, workers, drivers, orders, revenue, stores, categories, services, offers, wallets, employees });
 };
 
 // Function to check permissions (dummy implementation)
