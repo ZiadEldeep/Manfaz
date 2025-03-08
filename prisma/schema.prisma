@@ -344,7 +344,7 @@ model Store {
   status      String     @default("active") // "active", "inactive", "closed"
   minOrderAmount Float?  // الحد الأدنى للطلب
   deliveryFee   Float?  // رسوم التوصيل
-  
+  priceDriver   Float?  // سعر التوصيل للسائق
   categories  StoreCategory[] // تصنيفات المتجر الداخلية
   products    Product[]      // المنتجات
   offers      StoreOffer[]   // العروض

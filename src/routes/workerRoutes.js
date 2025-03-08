@@ -12,5 +12,5 @@ router.get(`/workers/:workerId/reviews`, getAllReviews);
 router.post(`/workers/:workerId/reviews`, createReview);
 router.put(`/workers/:workerId/reviews/:id`, updateReview);
 router.delete(`/workers/:workerId/reviews/:id`, deleteReview);
-router.put(`/workers/:workerId/schedule-time`, updateSchedule);
+router.put(`/workers/:workerId/schedule`, updateSchedule);
 module.exports = router;

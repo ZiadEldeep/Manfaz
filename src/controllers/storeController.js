@@ -67,7 +67,8 @@ const createStore = async (req, res) => {
       email,
       minOrderAmount,
       deliveryFee,
-      categoryId
+      categoryId,
+      priceDriver
     } = req.body;
 
     if (!name || !type || !address || !categoryId) {
@@ -93,7 +94,8 @@ const createStore = async (req, res) => {
         email,
         minOrderAmount,
         categoryId,
-        deliveryFee
+        deliveryFee,
+        priceDriver
       }
     });
 
