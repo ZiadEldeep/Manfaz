@@ -100,6 +100,7 @@ const createOrder = async (req, res) => {
       locationId,
       price,
       duration,
+      paymentMethod,
       ...createOrderData
     } = req.body;
 
@@ -129,7 +130,7 @@ const createOrder = async (req, res) => {
     }
     // التحقق من نوع الطلب وإنشاءه
     if (type === "service") {
-      if (!userId || !serviceId || !providerId || !totalAmount || !price ) {
+      if (!userId || !serviceId || !providerId || !totalAmount || !price || !paymentMethod ) {
         const message = await translate('All fields are required', { to: lang });
         return res.status(400).json({ status: false, message, code: 400, data: null });
       }
@@ -158,7 +159,8 @@ const createOrder = async (req, res) => {
           imageUrl,
           locationId,
           price,
-          duration,...createOrderData
+          duration,...createOrderData,
+          paymentMethod
         },
       });
 
@@ -191,7 +193,7 @@ const createOrder = async (req, res) => {
         }
       });
     }else{
-      if (!userId  || !totalAmount  || !price ) {
+      if (!userId  || !totalAmount  || !price || !paymentMethod ) {
         const message = await translate('All fields are required', { to: lang });
         return res.status(400).json({ status: false, message, code: 400, data: null });
       }
@@ -212,7 +214,8 @@ const createOrder = async (req, res) => {
           imageUrl,
           locationId,
           price,
-          duration,...createOrderData
+          duration,...createOrderData,
+          paymentMethod
         },
       });
 

@@ -275,12 +275,19 @@ model Order {
   updatedAt    DateTime   @updatedAt 
   storeId      String?    @db.ObjectId  // إضافة هذا الحقل
   store        Store?     @relation(fields: [storeId], references: [id])
-  
-
+  paymentMethod PaymentMethod?
   Review Review[]
 
   ScheduleOrder ScheduleOrder[]
 }
+
+enum PaymentMethod {
+  cash
+  credit_card
+  tamara
+  tabby
+}
+
 model ScheduleOrder {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   scheduleId  String   @db.ObjectId
