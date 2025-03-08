@@ -113,7 +113,8 @@ model ServiceParameter {
   sortOrder   Int       @default(0)
   rating      Float?    @default(5.0)  // تقييم الخدمة
   ratingCount Int?      @default(1)    // عدد التقييمات
-  
+  duration    Int?
+  availability Boolean? @default(true)
   // FAQ Fields
   faqs        Json?     // Array of FAQ objects
   whatIncluded Json?    // ما تشتمل عليه الخدمة
@@ -145,7 +146,57 @@ model Worker {
   experiences     WorkExperience[]
   reviews         Review[]
   Order Order[]
+  schedule Schedule[]
 }
+enum StatusEnum {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum ShiftEnum {
+  MORNING
+  EVENING
+  NIGHT
+}
+
+enum WorkerTypeEnum {
+  DRIVER
+  TECHNICIAN
+  ELECTRICIAN
+  PLUMBER
+  OTHER
+}
+
+enum PriorityEnum {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Schedule {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  workerId       String       @db.ObjectId
+  scheduledTime  DateTime
+  date           DateTime
+  day            String       // يوم الأسبوع مثل (Monday, Tuesday)
+  shiftType      ShiftEnum    @default(MORNING) // نوع الدوام
+  worker         Worker       @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  maxOrders      Int          @default(10) // الحد الأقصى للطلبات في اليوم
+  ordersCount    Int          @default(0) // عدد الطلبات الحالية
+  isFull         Boolean      @default(false) // هل الجدول ممتلئ؟
+  location       String?      // الموقع الجغرافي (اختياري)
+  workerType     WorkerTypeEnum // نوع العامل
+  status         StatusEnum   @default(SCHEDULED) // حالة الجدولة
+  priority       PriorityEnum @default(MEDIUM) // أولوية الجدول
+  notes          String?      // ملاحظات إضافية
+  createdAt      DateTime     @default(now()) // تاريخ الإنشاء
+  updatedAt      DateTime     @updatedAt // آخر تحديث
+
+  ScheduleOrder ScheduleOrder[]
+}
+
 model WorkExperience {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   workerId    String   @db.ObjectId
@@ -214,8 +265,18 @@ model Order {
   updatedAt    DateTime   @updatedAt 
   storeId      String?    @db.ObjectId  // إضافة هذا الحقل
   store        Store?     @relation(fields: [storeId], references: [id])
+  
 
   Review Review[]
+
+  ScheduleOrder ScheduleOrder[]
+}
+model ScheduleOrder {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  scheduleId  String   @db.ObjectId
+  orderId     String   @db.ObjectId
+  schedule    Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 enum OrderStatus {
@@ -230,6 +291,7 @@ enum PaymentStatus {
   paid
   failed
 }
+
 model Wallet {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
   userId      String     @db.ObjectId

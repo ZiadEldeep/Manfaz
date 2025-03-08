@@ -93,7 +93,9 @@ const createServiceParameter = async (req, res) => {
       sortOrder,
       faqs,
       whatIncluded,
-      iconUrl
+      iconUrl,
+      duration,
+      availability
     } = req.body;
 
     if (!name || !price || !serviceId) {
@@ -138,7 +140,9 @@ const createServiceParameter = async (req, res) => {
         sortOrder: sortOrder || 0,
         faqs: translatedFaqs,
         whatIncluded: translatedWhatIncluded,
-        iconUrl
+        iconUrl,
+        duration,
+        availability
       },
     });
 
@@ -261,7 +265,9 @@ const updateServiceParameter = async (req, res) => {
       sortOrder,
       faqs,
       iconUrl,
-      whatIncluded
+      whatIncluded,
+      duration,
+      availability
     } = req.body;
 
     const parameter = await prisma.serviceParameter.findUnique({
@@ -301,7 +307,9 @@ const updateServiceParameter = async (req, res) => {
         status: status || parameter.status,
         sortOrder: sortOrder || parameter.sortOrder,
         faqs: translatedFaqs,
-        whatIncluded: translatedWhatIncluded
+        whatIncluded: translatedWhatIncluded,
+        duration,
+        availability
       },
     });
 
