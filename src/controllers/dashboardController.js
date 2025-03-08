@@ -116,6 +116,31 @@ const getDashboardData = async (req, res) => {
   return res.json({ users, workers, drivers, orders, revenue, stores, categories, services, offers, wallets, employees });
 };
 
-// Function to check permissions (dummy implementation)
 
-module.exports = { getDashboardData };
+// Function to get the monthly revenue
+async function getRevenue(req, res) {
+    try {
+      const orders = await prisma.order.groupBy({
+        by: ["createdAt"],
+        where: { status: "completed" },
+        _sum: { price: true },
+      });
+  
+      // تحويل البيانات إلى شكل RevenueData
+      const revenueData = orders.map((order) => ({
+        month: new Date(order.createdAt).toLocaleString("en-US", {
+          month: "long",
+          year: "numeric",
+        }), // تحويل التاريخ إلى "January 2024"
+        revenue: order._sum.price || 0,
+      }));
+  
+      res.json(revenueData);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error fetching revenue data" });
+    }
+  }
+  
+
+module.exports = { getDashboardData,getRevenue };
