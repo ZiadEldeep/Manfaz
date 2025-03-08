@@ -309,13 +309,13 @@ const updateWorker = async (req, res) => {
     // ترجمة جميع الحقول المحدثة في وقت واحد
     if (WorkerCategory) {
       WorkerCategory.map(async category => {
-        let workerCategory=await prisma.workerCategory.findUnique({
+        let workerCategory = await prisma.workerCategory.findFirst({
           where: {
-              categoryId: category.categoryId,
-              workerId: id
-            
-          }
-        })
+            categoryId: category.categoryId,
+            workerId: id,
+          },
+        });
+        
         if(!workerCategory){
           await prisma.workerCategory.create({
             data: {
