@@ -4,8 +4,15 @@ const translate = require('translate-google');
 // Get All Workers
 const getAllWorkers = async (req, res) => {
   const lang = req.query.lang || 'en';
+  let {categoryId}=req.query;
   try {
-    const workers = await prisma.worker.findMany({include: { user: {
+    const workers = await prisma.worker.findMany({where:categoryId? {
+      WorkerCategory:{
+        some:{
+          categoryId
+        }
+      }
+    }:{},include: { user: {
       select: {
         id: true,
         name: true,
@@ -62,7 +69,8 @@ const createWorker = async (req, res) => {
       description,
       profileImage,
       hourlyRate,
-      skills 
+      skills ,
+      WorkerCategory
     } = req.body;
 
     if (!userId || !title || !description || !hourlyRate || !skills) {
@@ -98,13 +106,32 @@ const createWorker = async (req, res) => {
         isFavorite: false,
         jobSuccessRate: 0,
         totalEarned: 0,
+        WorkerCategory:{
+          create: WorkerCategory.map(category => ({
+            categoryId: category.categoryId
+          }))
+        },
         ScheduleOrder: {
           create: {
-            
+            Schedule: {
+              create: {
+                days: [],
+                startTime: "",
+                endTime: "",
+              }
+            }
           }
         }
       },
     });
+    // if (WorkerCategory) {
+    //   await prisma.workerCategory.createMany({
+    //     data: WorkerCategory.map(category => ({
+    //       categoryId: category.categoryId,
+    //       workerId: newWorker.id
+    //     }))
+    //   })
+    // }
 
     const message = await translate('Worker created successfully', { to: lang });
     
@@ -149,7 +176,7 @@ const getWorkerById = async (req, res) => {
     const { id } = req.params;
     const worker = await prisma.worker.findUnique({
       where: { id },
-      include: { user:true }
+      include: { user:true,WorkerCategory:true }
     });
 
     if (!worker) { 
@@ -205,7 +232,7 @@ const updateWorker = async (req, res) => {
     const { id } = req.params;
     const { title, description, skills, hourlyRate, isVerified,totalJobsDone,about,
       experiences ,
-      reviews ,userId } = req.body;
+      reviews ,userId,WorkerCategory } = req.body;
 
     if (!id) {
       const message = await translate('id is required', { to: lang });
@@ -268,6 +295,36 @@ const updateWorker = async (req, res) => {
       
     }
     // ترجمة جميع الحقول المحدثة في وقت واحد
+    if (WorkerCategory) {
+      WorkerCategory.map(async category => {
+        let workerCategory=await prisma.workerCategory.findUnique({
+          where: {
+              categoryId: category.categoryId,
+              workerId: id
+            
+          }
+        })
+        if(!workerCategory){
+          await prisma.workerCategory.create({
+            data: {
+              categoryId: category.categoryId,
+              workerId: id
+            }
+          })
+        }else{
+          await prisma.workerCategory.update({
+            where: {
+                categoryId: category.categoryId,
+                workerId: id
+            },
+            data: {
+              categoryId: category.categoryId,
+              workerId: id
+            }
+          })
+        }
+      })
+    }
     const [transTitle, transDesc, transSkills] = await Promise.all([
       title ? translate(title, { to: "en" }) : worker.title,
       description ? translate(description, { to: "en" }) : worker.description,
@@ -280,10 +337,14 @@ const updateWorker = async (req, res) => {
         title: transTitle,
         description: transDesc,
         skills: transSkills,
-        hourlyRate: hourlyRate || worker.hourlyRate
+        hourlyRate: hourlyRate || worker.hourlyRate,
       },
+      select:{
+        WorkerCategory:true
+      }
     });
 
+    
     const message = await translate('Worker updated successfully', { to: lang });
 
     if (lang === 'en') {

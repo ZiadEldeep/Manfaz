@@ -56,6 +56,15 @@ model Category {
   services    Service[]
 
   Store Store[]
+
+  WorkerCategory WorkerCategory[]
+}
+model WorkerCategory {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  worker      Worker     @relation(fields: [workerId], references: [id])
+  category    Category   @relation(fields: [categoryId], references: [id])
+  workerId    String     @db.ObjectId
+  categoryId  String     @db.ObjectId
 }
 
 
@@ -118,7 +127,6 @@ model ServiceParameter {
   // FAQ Fields
   faqs        Json?     // Array of FAQ objects
   whatIncluded Json?    // ما تشتمل عليه الخدمة
-  
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -147,6 +155,8 @@ model Worker {
   reviews         Review[]
   Order Order[]
   schedule Schedule[]
+
+  WorkerCategory WorkerCategory[]
 }
 enum StatusEnum {
   SCHEDULED
