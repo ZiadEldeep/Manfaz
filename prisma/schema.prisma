@@ -524,6 +524,7 @@ model EmployeePermissions {
   deleteStores           Boolean @default(false)
   
   viewProviders          Boolean @default(false)
+  createProviders        Boolean @default(false)
   approveProviders       Boolean @default(false)
   updateProviders        Boolean @default(false)
   deleteProviders        Boolean @default(false)
