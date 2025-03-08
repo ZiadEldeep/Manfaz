@@ -113,9 +113,6 @@ const getDashboardData = async (req, res) => {
   let wallets=await prisma.wallet.count();
   let employees=await prisma.employee.count();
 
-  const stats = await getDashboardStats();
-
-
   return res.json({ users, workers, drivers, orders, revenue, stores, categories, services, offers, wallets, employees });
 };
 
