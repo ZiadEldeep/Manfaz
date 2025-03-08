@@ -251,6 +251,15 @@ model DeliveryDriver {
   Order Order[]
 }
 
+model OrdersStore {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  orderId String @db.ObjectId
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  storeId String @db.ObjectId
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  products ProductsOrder[]
+}
 model Order {
   id           String     @id @default(auto()) @map("_id") @db.ObjectId
   userId       String     @db.ObjectId
@@ -262,7 +271,6 @@ model Order {
   deliveryDriverId String? @db.ObjectId // السائق
   deliveryDriver DeliveryDriver? @relation(fields: [deliveryDriverId], references: [id])
   description  String?
-  imageUrl     String?
   locationId   String @db.ObjectId
   location     UserLocation? @relation(fields: [locationId], references: [id])
   notes        String?
@@ -273,12 +281,20 @@ model Order {
   paymentStatus PaymentStatus    @default(pending) // "pending", "paid", "failed"
   createdAt    DateTime   @default(now()) 
   updatedAt    DateTime   @updatedAt 
-  storeId      String?    @db.ObjectId  // إضافة هذا الحقل
-  store        Store?     @relation(fields: [storeId], references: [id])
+  
+  store        OrdersStore[]
   paymentMethod PaymentMethod?
   Review Review[]
 
   ScheduleOrder ScheduleOrder[]
+}
+model ProductsOrder{
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  orderId String @db.ObjectId
+  orders OrdersStore @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String @db.ObjectId
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity Int
 }
 
 enum PaymentMethod {
@@ -354,8 +370,7 @@ model Store {
   priceDriver   Float?  // سعر التوصيل للسائق
   categories  StoreCategory[] // تصنيفات المتجر الداخلية
   products    Product[]      // المنتجات
-  offers      StoreOffer[]   // العروض
-  orders      Order[]        // الطلبات
+  offers      StoreOffer[]   //ا  // الطلبات
   
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -367,6 +382,8 @@ model Store {
   GiftCard GiftCard[]
 
   Reward Reward[]
+
+  OrdersStore OrdersStore[]
 }
 
 model StoreLocation {
@@ -417,6 +434,8 @@ model Product {
   discountPrice Float?     // سعر العرض (إن وجد)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  ProductsOrder ProductsOrder[]
 }
 
 model StoreOffer {
@@ -648,3 +667,6 @@ enum EmployeeRole {
   supervisor
   admin
 }
+
+
+

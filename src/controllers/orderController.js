@@ -101,6 +101,7 @@ const createOrder = async (req, res) => {
       price,
       duration,
       paymentMethod,
+      store,
       ...createOrderData
     } = req.body;
 
@@ -207,7 +208,6 @@ const createOrder = async (req, res) => {
       const newOrder = await prisma.order.create({
         data: {
           userId,
-          storeId:service.id,
           totalAmount,
           description: translatedDesc,
           notes:notesTranslated,
@@ -215,7 +215,18 @@ const createOrder = async (req, res) => {
           locationId,
           price,
           duration,...createOrderData,
-          paymentMethod
+          paymentMethod,
+          store:{
+            create:store.map((store)=>({
+              storeId:store.storeId,
+              products:{
+                create:store.products.map((product)=>({
+                  productId:product.productId,
+                  quantity:product.quantity
+                }))
+              }
+            }))
+          }
         },
       });
 
