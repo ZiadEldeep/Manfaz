@@ -1,4 +1,3 @@
-const { tr } = require('translate-google/languages');
 const prisma = require('../prismaClient');
 const translate = require('translate-google');
 const { addDays, startOfMonth, endOfMonth } = require("date-fns");
