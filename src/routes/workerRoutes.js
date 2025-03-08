@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllWorkers, createWorker, getWorkerById, updateWorker, deleteWorker, getAllReviews, createReview, updateReview, deleteReview, updateScheduledTime } = require('../controllers/workerController');
+const { getAllWorkers, createWorker, getWorkerById, updateWorker, deleteWorker, getAllReviews, createReview, updateReview, deleteReview, updateSchedule } = require('../controllers/workerController');
 const router = express.Router();
 
 // worker
@@ -12,5 +12,5 @@ router.get(`/workers/:workerId/reviews`, getAllReviews);
 router.post(`/workers/:workerId/reviews`, createReview);
 router.put(`/workers/:workerId/reviews/:id`, updateReview);
 router.delete(`/workers/:workerId/reviews/:id`, deleteReview);
-router.put(`/workers/:workerId/schedule-time`, updateScheduledTime);
+router.put(`/workers/:workerId/schedule-time`, updateSchedule);
 module.exports = router;

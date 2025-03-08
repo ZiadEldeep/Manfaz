@@ -323,17 +323,6 @@ const updateWorker = async (req, res) => {
               workerId: id
             }
           })
-        }else{
-          await prisma.workerCategory.update({
-            where: {
-                categoryId: category.categoryId,
-                workerId: id
-            },
-            data: {
-              categoryId: category.categoryId,
-              workerId: id
-            }
-          })
         }
       })
     }
@@ -560,17 +549,17 @@ const deleteReview = async (req, res) => {
 };
 
 // Update Scheduled Time
-const updateScheduledTime = async (req, res) => {
+const updateSchedule = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { workerId } = req.params;
-    const { scheduledTime } = req.body;
-    const worker = await prisma.worker.update({
-      where: { id: workerId },
+    const { schedule } = req.body;
+    const worker = await prisma.scheduleOrder.update({
+      where: { workerId },
       data: {
-        scheduledTime,
+        schedule,
       },
-    });
+    })
     const message = await translate('Scheduled time updated successfully', { to: lang });
     res.status(200).json({
       status: true,
@@ -584,4 +573,4 @@ const updateScheduledTime = async (req, res) => {
   }
 };
 
-module.exports = { getAllWorkers, createWorker, getWorkerById, updateWorker, deleteWorker, getAllReviews, createReview, updateReview, deleteReview, updateScheduledTime };
+module.exports = { getAllWorkers, createWorker, getWorkerById, updateWorker, deleteWorker, getAllReviews, createReview, updateReview, deleteReview, updateSchedule };
