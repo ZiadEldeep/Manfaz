@@ -24,8 +24,9 @@ const app = express();
 // Middleware
 app.use(bodyParser.json());
 app.use(cors({
-    origin: 'http://localhost:3000', // Allow requests from this origin
+    origin: ['http://localhost:3000',"http://manfaz.vercel.app/","https://manfaz-dashboard.vercel.app/"], // Allow requests from this origin
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true // Allow credentials if needed
 }));
 
