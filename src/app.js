@@ -23,7 +23,7 @@ const app = express();
 
 // Middleware
 app.use(bodyParser.json());
-app.use(cors({credentials: true, origin: process.env.CORS_ORIGIN}));
+app.use(cors({credentials: true, origin: "*"}));
 
 // Routes
 app.use('/auth', authRoutes);
