@@ -4,12 +4,14 @@ const {
   createUserLocation,
   updateUserLocation,
   deleteUserLocation,
-  setDefaultLocation
+  setDefaultLocation,
+  getAllUserLocations
 } = require('../controllers/userLocationController');
 
 const router = express.Router();
 
 // User Locations
+router.get("/", getAllUserLocations)
 router.get('/users/:userId/locations', getUserLocations);
 router.post('/users/:userId/locations', createUserLocation);
 router.put('/locations/:id', updateUserLocation);

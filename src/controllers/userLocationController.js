@@ -2,6 +2,31 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const  translate  = require('translate-google');
 
+const getAllUserLocations = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const locations = await prisma.userLocation.findMany({
+      orderBy: [
+        { isDefault: 'desc' },
+        { createdAt: 'desc' }
+      ]
+    });
+    const message = await translate('Locations retrieved successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: locations
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: false,
+      message: await translate('Failed to retrieve locations', { to: lang }),
+      code: 500,
+      error: error.message
+    });
+  }
+}
 // الحصول على عناوين المستخدم
 const getUserLocations = async (req, res) => {
   const lang = req.query.lang || 'ar';
@@ -218,5 +243,6 @@ module.exports = {
   createUserLocation,
   updateUserLocation,
   deleteUserLocation,
-  setDefaultLocation
+  setDefaultLocation,
+  getAllUserLocations
 }; 

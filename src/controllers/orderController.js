@@ -42,12 +42,14 @@ const getAllOrders = async (req, res) => {
     });
     const message = await translate('Orders retrieved successfully', { to: lang });
 
+    const totalOrders = await prisma.order.count({ where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition } });
+    const totalPages = Math.ceil(totalOrders / limit);
     if (lang === 'en') {
       res.status(200).json({
         status: true,
         message,
         code: 200,
-        data: orders
+        data: {orders,totalOrders, totalPages, currentPage: page}
       });
       return;
     }
@@ -62,8 +64,6 @@ const getAllOrders = async (req, res) => {
         address: translatedAddress
       };
     }));
-    const totalOrders = await prisma.order.count({ where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition } });
-    const totalPages = Math.ceil(totalOrders / limit);
     res.status(200).json({
       status: true,
       message,
