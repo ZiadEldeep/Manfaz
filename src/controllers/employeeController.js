@@ -7,10 +7,15 @@ const jwt = require('jsonwebtoken'); // For token management
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
-    const employees = await prisma.employee.findMany();
+    const employees = await prisma.employee.findMany({
+      include: {
+        permissions: true,
+        activities: true,
+      },
+    });
     res.json({ success: true, data: employees });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر',data: null,code:500 });
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }
 };
 
@@ -18,13 +23,18 @@ const getAllEmployees = async (req, res) => {
 const getEmployeeById = async (req, res) => {
   const { id } = req.params;
   try {
-    const employee = await prisma.employee.findUnique({ where: { id } });
+    const employee = await prisma.employee.findUnique({
+      where: { id }, include: {
+        activities: true,
+        permissions: true,
+      }
+    });
     if (!employee) {
-      return res.status(404).json({ success: false, message: 'الموظف غير موجود',data: null,code:404 });
+      return res.status(404).json({ success: false, message: 'الموظف غير موجود', data: null, code: 404 });
     }
     res.json({ success: true, data: employee });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر',data: null,code:500 });
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }
 };
 
@@ -46,7 +56,7 @@ const createEmployee = async (req, res) => {
     const token = jwt.sign({ id: newEmployee.id, role: newEmployee.role }, JWT_SECRET, { expiresIn: '1h' });
     res.status(201).json({ success: true, data: newEmployee, token });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر',data: null,code:500 });
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }
 };
 
@@ -67,7 +77,7 @@ const updateEmployee = async (req, res) => {
     });
     res.json({ success: true, data: updatedEmployee });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر',data: null,code:500 });
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }
 };
 
@@ -78,7 +88,7 @@ const deleteEmployee = async (req, res) => {
     await prisma.employee.delete({ where: { id } });
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر',data: null,code:500 });
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }
 };
 
@@ -94,7 +104,7 @@ const updateEmployeePermissions = async (req, res) => {
     });
     res.json({ success: true, data: updatedEmployee });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر',data: null,code:500 });
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }
 };
 
@@ -110,7 +120,7 @@ const updateEmployeeRole = async (req, res) => {
     });
     res.json({ success: true, data: updatedEmployee });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر',data: null,code:500 });
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }
 };
 
@@ -120,15 +130,15 @@ const toggleEmployeeActive = async (req, res) => {
   try {
     const employee = await prisma.employee.findUnique({ where: { id } });
     if (!employee) {
-      return res.status(404).json({ success: false, message: 'الموظف غير موجود',data: null,code:404 });
+      return res.status(404).json({ success: false, message: 'الموظف غير موجود', data: null, code: 404 });
     }
     const updatedEmployee = await prisma.employee.update({
       where: { id },
       data: { isActive: !employee.isActive },
     });
-    res.json({ success: true, data: updatedEmployee ,code:200,message:'تم تحديث حالة الموظف بنجاح' });
+    res.json({ success: true, data: updatedEmployee, code: 200, message: 'تم تحديث حالة الموظف بنجاح' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر',data: null,code:500 });
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }
 };
 
