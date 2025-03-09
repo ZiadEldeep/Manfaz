@@ -82,13 +82,8 @@ async function checkPermissions(employeeId) {
 }
 
 const getDashboardData = async (req, res) => {
-  // Check permissions for the employee
-  const employeeId = req.user.id; // Assuming user ID is stored in req.user
-//   const hasPermission = await checkPermissions(employeeId); // Implement this function to check permissions
-
-//   if (!hasPermission) {
-//     return res.status(403).json({ message: "Forbidden" });
-//   }
+    const lang = req.query.lang || "en";
+    try {
   let users=await prisma.user.count({
     where: {
       role: "user",
@@ -112,8 +107,15 @@ const getDashboardData = async (req, res) => {
   let offers=await prisma.offer.count();
   let wallets=await prisma.wallet.count();
   let employees=await prisma.employee.count();
+  
+  let message=await translate("Data fetched successfully", { to: lang });
 
-  return res.json({ users, workers, drivers, orders, revenue, stores, categories, services, offers, wallets, employees });
+  return res.json({ users, workers, drivers, orders, revenue, stores, categories, services, offers, wallets, employees,message });}
+  catch (error) {
+    let message=await translate("Failed to fetch data", { to: lang });
+    console.error(error);
+    return res.status(500).json({ message:message+" "+error.message,code:500,data:{},status:false });
+  }
 };
 
 
