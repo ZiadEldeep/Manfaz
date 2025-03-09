@@ -58,6 +58,17 @@ const register = async (req, res) => {
       const verificationCode = generateVerificationCode();
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      const createPermissionsBatch = async (employeeId, permissionsBatch) => {
+        await prisma.employee.update({
+          where: { id: employeeId },
+          data: {
+            permissions: {
+              create: permissionsBatch,
+            },
+          },
+        });
+      };
+
       const newUser = await prisma.employee.create({
         data: {
           name,
@@ -66,121 +77,114 @@ const register = async (req, res) => {
           password: hashedPassword,
           verificationCode,
           role,
-          permissions: {
-            create: {
-              viewOrders :true,
-              updateOrders :true,
-              deleteOrders :true,
-            
-              // إدارة العملاء
-              viewCustomers :true,  
-              updateCustomers :true,
-              deleteCustomers :true,
-            
-              // إدارة المواقع والعناوين
-              viewLocations :true,  
-              createLocations :true,
-              updateLocations :true,
-              deleteLocations :true,
-            
-              // إدارة الخدمات
-              viewServices :true,  
-              createServices :true,
-              updateServices :true,
-              deleteServices :true,
-            
-              // إدارة العروض والخصومات
-              viewOffers :true,  
-              createOffers :true,
-              updateOffers :true,
-              deleteOffers :true,
-            
-              // إدارة التصنيفات
-              viewCategories :true,  
-              createCategories :true,
-              updateCategories :true,
-              deleteCategories :true,
-            
-              // إدارة المتاجر
-              viewStores :true,  
-              createStores :true,
-              updateStores :true,
-              deleteStores :true,
-            
-              // إدارة مقدمي الخدمات
-              viewProviders :true,  
-              createProviders :true,
-              approveProviders :true,
-              updateProviders :true,
-              deleteProviders :true,
-            
-              // إدارة المحافظ والمدفوعات
-              viewWallets :true,  
-              manageTransactions :true,
-            
-              // إدارة التقارير
-              viewBasicReports :true,  
-              viewAdvancedReports :true,
-              exportReports :true,
-            
-              // إدارة الموظفين
-              viewEmployees :true,  
-              createEmployees :true,
-              updateEmployees :true,
-              deleteEmployees :true,
-              managePermissions :true,
-            
-              // إدارة النظام
-              manageSettings :true,  
-              viewAuditLogs :true,
-              manageBackups :true,
-            
-              // المكافآت
-              viewRewards :true,  
-              createRewards :true,
-              updateRewards :true,
-              deleteRewards :true,
-            
-              // المواعيد
-              viewSchedules :true,  
-              createSchedules :true,
-              updateSchedules :true,
-              deleteSchedules :true,
-            
-              // التقييمات
-              viewReviews :true,  
-              createReviews :true,
-              updateReviews :true,
-              deleteReviews :true,
-              
-              // المدفوعات
-              viewPayments :true,  
-              createPayments :true,
-              updatePayments :true,
-              deletePayments :true,
-            
-              // الكوبونات
-              viewCoupons :true,  
-              createCoupons :true,
-              updateCoupons :true,
-              deleteCoupons :true,
-            
-              // الخصومات
-              viewDiscounts :true,  
-              createDiscounts :true,
-              updateDiscounts :true,
-              deleteDiscounts :true,
-            
-              // البطاقات
-              viewGiftCards :true,  
-              createGiftCards :true,
-              updateGiftCards :true,
-              deleteGiftCards :true,
-            
-            },
-          },
         },
       });
+
+      // الأذونات
+      const allPermissions = [
+        { viewOrders: true, updateOrders: true, deleteOrders: true },
+        { viewCustomers: true, updateCustomers: true, deleteCustomers: true },
+        {
+          viewLocations: true,
+          createLocations: true,
+          updateLocations: true,
+          deleteLocations: true,
+        },
+        {
+          viewServices: true,
+          createServices: true,
+          updateServices: true,
+          deleteServices: true,
+        },
+        {
+          viewOffers: true,
+          createOffers: true,
+          updateOffers: true,
+          deleteOffers: true,
+        },
+        {
+          viewCategories: true,
+          createCategories: true,
+          updateCategories: true,
+          deleteCategories: true,
+        },
+        {
+          viewStores: true,
+          createStores: true,
+          updateStores: true,
+          deleteStores: true,
+        },
+        {
+          viewProviders: true,
+          createProviders: true,
+          approveProviders: true,
+          updateProviders: true,
+          deleteProviders: true,
+        },
+        { viewWallets: true, manageTransactions: true },
+        {
+          viewBasicReports: true,
+          viewAdvancedReports: true,
+          exportReports: true,
+        },
+        {
+          viewEmployees: true,
+          createEmployees: true,
+          updateEmployees: true,
+          deleteEmployees: true,
+          managePermissions: true,
+        },
+        { manageSettings: true, viewAuditLogs: true, manageBackups: true },
+        {
+          viewRewards: true,
+          createRewards: true,
+          updateRewards: true,
+          deleteRewards: true,
+        },
+        {
+          viewSchedules: true,
+          createSchedules: true,
+          updateSchedules: true,
+          deleteSchedules: true,
+        },
+        {
+          viewReviews: true,
+          createReviews: true,
+          updateReviews: true,
+          deleteReviews: true,
+        },
+        {
+          viewPayments: true,
+          createPayments: true,
+          updatePayments: true,
+          deletePayments: true,
+        },
+        {
+          viewCoupons: true,
+          createCoupons: true,
+          updateCoupons: true,
+          deleteCoupons: true,
+        },
+        {
+          viewDiscounts: true,
+          createDiscounts: true,
+          updateDiscounts: true,
+          deleteDiscounts: true,
+        },
+        {
+          viewGiftCards: true,
+          createGiftCards: true,
+          updateGiftCards: true,
+          deleteGiftCards: true,
+        },
+      ];
+
+      // إضافة الأذونات في دفعات
+      const BATCH_SIZE = 10; // حجم الدفعة
+      for (let i = 0; i < allPermissions.length; i += BATCH_SIZE) {
+        const permissionsBatch = allPermissions.slice(i, i + BATCH_SIZE);
+        await createPermissionsBatch(newUser.id, permissionsBatch);
+      }
 
       if (email) {
         await sendConfirmationEmail(email, verificationCode);
@@ -204,7 +208,7 @@ const register = async (req, res) => {
         code: 201,
         data: newUser,
         accessToken,
-        refreshToken
+        refreshToken,
       });
       return;
     }
