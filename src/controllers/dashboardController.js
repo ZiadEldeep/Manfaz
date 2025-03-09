@@ -1,4 +1,4 @@
-const { prisma } = require("../prismaClient");
+const prisma = require('../prismaClient');
 const translate = require("translate-google");
 async function checkPermissions(employeeId) {
   try {
