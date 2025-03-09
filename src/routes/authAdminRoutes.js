@@ -18,6 +18,14 @@ router.post('/login', login);
 router.post('/change-password', protect, changePassword);
 router.post('/resend-verification-code', protect, resendVerificationCode);
 router.post('/verify-account', protect,verifyAccount);
-router.post('/refresh', refresh);
+router.post('/refresh', (req, res) => {
+    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.header("Access-Control-Allow-Credentials", "true");
+    
+    res.json({ message: "CORS headers set!" });
+});
+
 
 module.exports = router;
