@@ -643,6 +643,11 @@ model EmployeePermissions {
   manageSettings         Boolean @default(false)
   viewAuditLogs          Boolean @default(false)
   manageBackups          Boolean @default(false)
+
+  viewLocations         Boolean @default(false)
+  createLocations       Boolean @default(false)
+  updateLocations       Boolean @default(false)
+  deleteLocations       Boolean @default(false)
   
   employee Employee?
 }

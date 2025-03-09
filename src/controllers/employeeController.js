@@ -6,14 +6,27 @@ const jwt = require('jsonwebtoken'); // For token management
 
 // Get all employees
 const getAllEmployees = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const search = req.query.search || '';
+  const offset = (page - 1) * limit;
   try {
+    const total = await prisma.employee.count();
     const employees = await prisma.employee.findMany({
+      where: {
+        OR: [ 
+          { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+          { email: { contains: search, mode: Prisma.QueryMode.insensitive } },
+        ],
+      },
       include: {
         permissions: true,
         activities: true,
       },
+      skip: offset,
+      take: limit,
     });
-    res.json({ success: true, data: employees });
+    res.json({ success: true, data: {employees,total} });
   } catch (error) {
     res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }
@@ -96,11 +109,19 @@ const deleteEmployee = async (req, res) => {
 const updateEmployeePermissions = async (req, res) => {
   const { id } = req.params;
   const { permissions } = req.body;
-
+  let id2=id
   try {
+    let {id,...permissions2} = permissions;
     const updatedEmployee = await prisma.employee.update({
-      where: { id },
-      data: { permissions },
+      where: { id:id2 },
+      data: {
+        permissions: {
+          update: {
+            where: { id },
+            data: { ...permissions2 },
+          },
+        },
+      },
     });
     res.json({ success: true, data: updatedEmployee });
   } catch (error) {
