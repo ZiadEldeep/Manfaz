@@ -4,7 +4,7 @@ const {
   getDashboardData,
   getRevenue
 } = require('../controllers/dashboardController');
-const  protect  = require('../middleware/authAdminMiddleware'); // Ensure to use your authentication middleware
+// const  protect  = require('../middleware/authAdminMiddleware'); // Ensure to use your authentication middleware
 
 const router = express.Router();
 
