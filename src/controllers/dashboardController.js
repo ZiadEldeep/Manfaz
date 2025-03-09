@@ -1,5 +1,5 @@
 const { prisma } = require("../prismaClient");
-
+const translate = require("translate-google");
 async function checkPermissions(employeeId) {
   try {
     const employee = await prisma.employee.findUnique({
@@ -119,6 +119,7 @@ const getDashboardData = async (req, res) => {
 
 // Function to get the monthly revenue
 async function getRevenue(req, res) {
+    const lang = req.query.lang || "en";
     try {
       const orders = await prisma.order.groupBy({
         by: ["createdAt"],
@@ -134,12 +135,14 @@ async function getRevenue(req, res) {
         }), // تحويل التاريخ إلى "January 2024"
         revenue: order._sum.price || 0,
       }));
-  
-      res.json(revenueData);
+  let message=await translate("Revenue data fetched successfully", { to: lang });
+      res.json({data:revenueData,success:true,code:200,message});
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Error fetching revenue data" });
-    }
+let message=await translate("Error fetching revenue data", { to: lang });
+          console.error(error);
+          res.status(500).json({ success: false, message:message + " " + error.message, code: 500,data:[] });
+        
+      }
   }
   
 
