@@ -9,7 +9,7 @@ const  protect  = require('../middleware/authAdminMiddleware'); // Ensure to use
 const router = express.Router();
 
 // Dashboard Routes
-router.get('/stats', protect, getDashboardData);
-router.get('/revenue', protect, getRevenue);
+router.get('/stats', getDashboardData);
+router.get('/revenue', getRevenue);
 
 module.exports = router;
