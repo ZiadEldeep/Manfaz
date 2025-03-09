@@ -17,17 +17,13 @@ const getAllUsers = async (req, res) => {
       return;
     }
 
-    // ترجمة جميع المستخدمين في وقت واحد
-    const translatedUsers = await Promise.all(users.map(async (user) => ({
-      ...user,
-      name: await translate(user.name, { to: lang })
-    })));
+
 
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: translatedUsers
+      data: users
     });
   } catch (error) {
     const message = await translate(`Failed to retrieve users: ${error.message}`, { to: lang });
