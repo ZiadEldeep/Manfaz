@@ -68,44 +68,115 @@ const register = async (req, res) => {
           role,
           permissions: {
             create: {
-              viewOrders: true,
-              updateOrders: true,
-              deleteOrders: true,
-              viewCustomers: true,
-              updateCustomers: true,
-              viewServices: true,
-              createServices: true,
-              updateServices: true,
-              deleteServices: true,
-              viewOffers: true,
-              createOffers: true,
-              updateOffers: true,
-              deleteOffers: true,
-              viewCategories: true,
-              createCategories: true,
-              updateCategories: true,
-              deleteCategories: true,
-              viewStores: true,
-              createStores: true,
-              updateStores: true,
-              deleteStores: true,
-              viewProviders: true,
-              approveProviders: true,
-              updateProviders: true,
-              deleteProviders: true,
-              viewWallets: true,
-              manageTransactions: true,
-              viewBasicReports: true,
-              viewAdvancedReports: true,
-              exportReports: true,
-              viewEmployees: true,
-              createEmployees: true,
-              updateEmployees: true,
-              deleteEmployees: true,
-              managePermissions: true,
-              manageSettings: true,
-              viewAuditLogs: true,
-              manageBackups: true,
+              viewOrders :true,
+              updateOrders :true,
+              deleteOrders :true,
+            
+              // إدارة العملاء
+              viewCustomers :true,  
+              updateCustomers :true,
+              deleteCustomers :true,
+            
+              // إدارة المواقع والعناوين
+              viewLocations :true,  
+              createLocations :true,
+              updateLocations :true,
+              deleteLocations :true,
+            
+              // إدارة الخدمات
+              viewServices :true,  
+              createServices :true,
+              updateServices :true,
+              deleteServices :true,
+            
+              // إدارة العروض والخصومات
+              viewOffers :true,  
+              createOffers :true,
+              updateOffers :true,
+              deleteOffers :true,
+            
+              // إدارة التصنيفات
+              viewCategories :true,  
+              createCategories :true,
+              updateCategories :true,
+              deleteCategories :true,
+            
+              // إدارة المتاجر
+              viewStores :true,  
+              createStores :true,
+              updateStores :true,
+              deleteStores :true,
+            
+              // إدارة مقدمي الخدمات
+              viewProviders :true,  
+              createProviders :true,
+              approveProviders :true,
+              updateProviders :true,
+              deleteProviders :true,
+            
+              // إدارة المحافظ والمدفوعات
+              viewWallets :true,  
+              manageTransactions :true,
+            
+              // إدارة التقارير
+              viewBasicReports :true,  
+              viewAdvancedReports :true,
+              exportReports :true,
+            
+              // إدارة الموظفين
+              viewEmployees :true,  
+              createEmployees :true,
+              updateEmployees :true,
+              deleteEmployees :true,
+              managePermissions :true,
+            
+              // إدارة النظام
+              manageSettings :true,  
+              viewAuditLogs :true,
+              manageBackups :true,
+            
+              // المكافآت
+              viewRewards :true,  
+              createRewards :true,
+              updateRewards :true,
+              deleteRewards :true,
+            
+              // المواعيد
+              viewSchedules :true,  
+              createSchedules :true,
+              updateSchedules :true,
+              deleteSchedules :true,
+            
+              // التقييمات
+              viewReviews :true,  
+              createReviews :true,
+              updateReviews :true,
+              deleteReviews :true,
+              
+              // المدفوعات
+              viewPayments :true,  
+              createPayments :true,
+              updatePayments :true,
+              deletePayments :true,
+            
+              // الكوبونات
+              viewCoupons :true,  
+              createCoupons :true,
+              updateCoupons :true,
+              deleteCoupons :true,
+            
+              // الخصومات
+              viewDiscounts :true,  
+              createDiscounts :true,
+              updateDiscounts :true,
+              deleteDiscounts :true,
+            
+              // البطاقات
+              viewGiftCards :true,  
+              createGiftCards :true,
+              updateGiftCards :true,
+              deleteGiftCards :true,
+            
             },
           },
         },

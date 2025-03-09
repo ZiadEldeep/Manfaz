@@ -597,57 +597,113 @@ model EmployeePermissions {
   viewOrders             Boolean @default(false)
   updateOrders           Boolean @default(false)
   deleteOrders           Boolean @default(false)
-  
-  viewCustomers          Boolean @default(false)
+
+  // إدارة العملاء
+  viewCustomers          Boolean @default(false)  
   updateCustomers        Boolean @default(false)
-  
+  deleteCustomers        Boolean @default(false)
+
+  // إدارة المواقع والعناوين
+  viewLocations          Boolean @default(false)
+  createLocations        Boolean @default(false)
+  updateLocations        Boolean @default(false)
+  deleteLocations        Boolean @default(false)
+
+  // إدارة الخدمات
   viewServices           Boolean @default(false)
   createServices         Boolean @default(false)
   updateServices         Boolean @default(false)
   deleteServices         Boolean @default(false)
-  
+
+  // إدارة العروض والخصومات
   viewOffers             Boolean @default(false)
   createOffers           Boolean @default(false)
   updateOffers           Boolean @default(false)
   deleteOffers           Boolean @default(false)
-  
+
+  // إدارة التصنيفات
   viewCategories         Boolean @default(false)
   createCategories       Boolean @default(false)
   updateCategories       Boolean @default(false)
   deleteCategories       Boolean @default(false)
-  
+
+  // إدارة المتاجر
   viewStores             Boolean @default(false)
   createStores           Boolean @default(false)
   updateStores           Boolean @default(false)
   deleteStores           Boolean @default(false)
-  
+
+  // إدارة مقدمي الخدمات
   viewProviders          Boolean @default(false)
   createProviders        Boolean @default(false)
   approveProviders       Boolean @default(false)
   updateProviders        Boolean @default(false)
   deleteProviders        Boolean @default(false)
-  
+
+  // إدارة المحافظ والمدفوعات
   viewWallets            Boolean @default(false)
   manageTransactions     Boolean @default(false)
-  
+
+  // إدارة التقارير
   viewBasicReports       Boolean @default(false)
   viewAdvancedReports    Boolean @default(false)
   exportReports          Boolean @default(false)
-  
+
+  // إدارة الموظفين
   viewEmployees          Boolean @default(false)
   createEmployees        Boolean @default(false)
   updateEmployees        Boolean @default(false)
   deleteEmployees        Boolean @default(false)
   managePermissions      Boolean @default(false)
-  
+
+  // إدارة النظام
   manageSettings         Boolean @default(false)
   viewAuditLogs          Boolean @default(false)
   manageBackups          Boolean @default(false)
 
-  viewLocations         Boolean @default(false)
-  createLocations       Boolean @default(false)
-  updateLocations       Boolean @default(false)
-  deleteLocations       Boolean @default(false)
+  // المكافآت
+  viewRewards            Boolean @default(false)
+  createRewards          Boolean @default(false)
+  updateRewards          Boolean @default(false)
+  deleteRewards          Boolean @default(false)
+
+  // المواعيد
+  viewSchedules          Boolean @default(false)
+  createSchedules        Boolean @default(false)
+  updateSchedules        Boolean @default(false)
+  deleteSchedules        Boolean @default(false)
+
+  // التقييمات
+  viewReviews            Boolean @default(false)
+  createReviews          Boolean @default(false)
+  updateReviews          Boolean @default(false)
+  deleteReviews          Boolean @default(false)
+
+  // المدفوعات
+  viewPayments           Boolean @default(false)
+  createPayments         Boolean @default(false)
+  updatePayments         Boolean @default(false)
+  deletePayments         Boolean @default(false)
+
+  // الكوبونات
+  viewCoupons            Boolean @default(false)
+  createCoupons          Boolean @default(false)
+  updateCoupons          Boolean @default(false)
+  deleteCoupons          Boolean @default(false)
+
+  // الخصومات
+  viewDiscounts          Boolean @default(false)
+  createDiscounts        Boolean @default(false)
+  updateDiscounts        Boolean @default(false)
+  deleteDiscounts        Boolean @default(false)
+
+  // البطاقات
+  viewGiftCards          Boolean @default(false)
+  createGiftCards        Boolean @default(false)
+  updateGiftCards        Boolean @default(false)
+  deleteGiftCards        Boolean @default(false)
+
+
   
   employee Employee?
 }
