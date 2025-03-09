@@ -49,7 +49,7 @@ app.use('/service-parameters', serviceParameterRoutes);
 app.use('/stores', storeRoutes);
 app.use('/rewards', rewardRoutes);
 app.use('/store-working-hours', storeWorkingHoursRoutes);
-app.use('/user-locations', userLocationRoutes);
+app.use('/locations', userLocationRoutes);
 app.use('/employees', employeeRoutes);
 app.use('/employees-activities', employeeActivitiesRoutes);
 app.use("/dashboard", dashboardRoutes);

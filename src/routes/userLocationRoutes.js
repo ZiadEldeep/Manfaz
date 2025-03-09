@@ -14,8 +14,8 @@ const router = express.Router();
 router.get("/", getAllUserLocations)
 router.get('/users/:userId/locations', getUserLocations);
 router.post('/users/:userId/locations', createUserLocation);
-router.put('/locations/:id', updateUserLocation);
-router.delete('/locations/:id', deleteUserLocation);
-router.put('/locations/:id/set-default', setDefaultLocation);
+router.put('/:id', updateUserLocation);
+router.delete('/:id', deleteUserLocation);
+router.put('/:id/set-default', setDefaultLocation);
 
 module.exports = router; 
