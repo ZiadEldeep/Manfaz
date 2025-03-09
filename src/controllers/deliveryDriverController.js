@@ -1,13 +1,15 @@
 const prisma = require('../prismaClient');
 const translate = require('translate-google');
 
-// Get All Delivery Drivers
+// الحصول على جميع السائقين
 const getAllDeliveryDrivers = async (req, res) => {
-  const lang = req.query.lang || 'en';
+  const lang = req.query.lang || 'ar';
   try {
     const drivers = await prisma.deliveryDriver.findMany();
     const message = await translate('Delivery drivers retrieved successfully', { to: lang });
-
+    if (req.io) {
+      req.io.to('admin').emit('driversUpdated', drivers);
+    }
     if (lang === 'en') {
       res.status(200).json({
         status: true,
@@ -41,11 +43,11 @@ const getAllDeliveryDrivers = async (req, res) => {
   }
 };
 
-// Create Delivery Driver
+// إنشاء سائق جديد
 const createDeliveryDriver = async (req, res) => {
-  const lang = req.query.lang || 'en';
+  const lang = req.query.lang || 'ar';
   try {
-    const { userId, vehicleType, license, availability } = req.body;
+    const { userId, vehicleType, license } = req.body;
 
     if (!userId || !vehicleType || !license) {
       const message = await translate('All required fields must be provided', { to: lang });
@@ -53,7 +55,7 @@ const createDeliveryDriver = async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: userId, role: "user" }
     });
 
     if (!user) {
@@ -69,9 +71,17 @@ const createDeliveryDriver = async (req, res) => {
         userId,
         vehicleType: translatedVehicleType,
         license,
-        availability: availability ?? true,
+        availability: true
       },
+      include: {
+        user: true
+      }
     });
+
+    // إرسال إشعار للوحة التحكم
+    if (req.io) {
+      req.io.to('admin').emit('newDriver', newDriver);
+    }
 
     const message = await translate('Delivery driver created successfully', { to: lang });
 
@@ -103,13 +113,18 @@ const createDeliveryDriver = async (req, res) => {
   }
 };
 
-// Get Delivery Driver By ID
+// الحصول على سائق بواسطة المعرف
 const getDeliveryDriverById = async (req, res) => {
-  const lang = req.query.lang || 'en';
+  const lang = req.query.lang || 'ar';
   try {
     const { id } = req.params;
+    
     const driver = await prisma.deliveryDriver.findUnique({
       where: { id },
+      include: {
+        user: true,
+        Order: true
+      }
     });
 
     if (!driver) {
@@ -148,15 +163,15 @@ const getDeliveryDriverById = async (req, res) => {
   }
 };
 
-// Update Delivery Driver
+// تحديث بيانات السائق
 const updateDeliveryDriver = async (req, res) => {
-  const lang = req.query.lang || 'en';
+  const lang = req.query.lang || 'ar';
   try {
     const { id } = req.params;
     const { vehicleType, license, availability, rating, reviewsCount } = req.body;
 
     const driver = await prisma.deliveryDriver.findUnique({
-      where: { id },
+      where: { id }
     });
 
     if (!driver) {
@@ -175,10 +190,25 @@ const updateDeliveryDriver = async (req, res) => {
         license: license || driver.license,
         availability: availability ?? driver.availability,
         rating: rating || driver.rating,
-        reviewsCount: reviewsCount || driver.reviewsCount,
+        reviewsCount: reviewsCount || driver.reviewsCount
       },
+      include: {
+        user: true
+      }
     });
+    if (req.io) {
+      // إشعار للسائق
+      req.io.to(`driver_${id}`).emit('profileUpdated', updatedDriver);
 
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('driverUpdated', updatedDriver);
+ // إذا تم تحديث حالة التوفر
+ if (availability !== undefined) {
+  req.io.emit('driverAvailabilityChanged', {
+    driverId: id,
+    isAvailable: availability
+  });
+ }}
     const message = await translate('Delivery driver updated successfully', { to: lang });
 
     if (lang === 'en') {
@@ -210,14 +240,29 @@ const updateDeliveryDriver = async (req, res) => {
   }
 };
 
-// Delete Delivery Driver
+// حذف سائق
 const deleteDeliveryDriver = async (req, res) => {
-  const lang = req.query.lang || 'en';
+  const lang = req.query.lang || 'ar';
   try {
     const { id } = req.params;
-    await prisma.deliveryDriver.delete({
-      where: { id },
+
+    const driver = await prisma.deliveryDriver.findUnique({
+      where: { id }
     });
+
+    if (!driver) {
+      const message = await translate('Delivery driver not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+
+    await prisma.deliveryDriver.delete({
+      where: { id }
+    });
+
+    // إرسال إشعار للوحة التحكم
+    if (req.io) {
+      req.io.to('admin').emit('driverDeleted', { id });
+    }
 
     const message = await translate('Delivery driver deleted successfully', { to: lang });
     res.status(200).json({
@@ -227,15 +272,6 @@ const deleteDeliveryDriver = async (req, res) => {
       data: null
     });
   } catch (error) {
-    if (error.code === 'P2025') {
-      const message = await translate('Delivery driver not found', { to: lang });
-      return res.status(404).json({
-        status: false,
-        message,
-        code: 404,
-        data: null,
-      });
-    }
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
@@ -243,8 +279,8 @@ const deleteDeliveryDriver = async (req, res) => {
 
 module.exports = {
   getAllDeliveryDrivers,
-  getDeliveryDriverById,
   createDeliveryDriver,
+  getDeliveryDriverById,
   updateDeliveryDriver,
-  deleteDeliveryDriver,
+  deleteDeliveryDriver
 }; 

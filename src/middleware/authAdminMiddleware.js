@@ -1,24 +1,93 @@
 const jwt = require('jsonwebtoken');
+const prisma = require('../prismaClient');
 const translate = require('translate-google');
-const ACCESS_SECRET_ADMIN = process.env.ACCESS_SECRET_ADMIN
-const REFRESH_SECRET_ADMIN = process.env.REFRESH_SECRET_ADMIN 
 
-const authenticateToken = async (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1]; // Get token from the Authorization header
+const protect = async (req, res, next) => {
+  const lang = req.query.lang || 'en';
+  try {
+    let token;
 
-  if (!token) {
-    let message =await translate('Unauthorized token is missing', { to: "ar" });
-    return res.status(401).json({ message, code: 401, data: null, status: false }); // Unauthorized
-  }
-  
-  let message =await translate('Forbidden access token', { to: "ar" });
-  jwt.verify(token, ACCESS_SECRET_ADMIN, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message, code: 403, data: null, status: false });
+    // التحقق من وجود التوكن في الهيدر
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
     }
-    req.user = user; // Store user info in request
-    next(); // Proceed to the next middleware or route handler
-  });
+    // التحقق من وجود التوكن في الكوكيز
+    else if (req.cookies.token) {
+      token = req.cookies.token;
+    }
+
+    if (!token) {
+      const message = await translate('Not authorized, no token', { to: lang });
+      return res.status(401).json({
+        status: false,
+        message,
+        code: 401,
+        data: null
+      });
+    }
+
+    // التحقق من صحة التوكن
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // التحقق من وجود المستخدم وأنه مسؤول
+    const employee = await prisma.employee.findUnique({
+      where: { id: decoded.id },
+      include: {
+        permissions: true
+      }
+    });
+
+    if (!employee || employee.role !== 'admin') {
+      const message = await translate('Not authorized as admin', { to: lang });
+      return res.status(401).json({
+        status: false,
+        message,
+        code: 401,
+        data: null
+      });
+    }
+
+    // التحقق من أن الموظف نشط
+    if (!employee.isActive) {
+      const message = await translate('Account is inactive', { to: lang });
+      return res.status(401).json({
+        status: false,
+        message,
+        code: 401,
+        data: null
+      });
+    }
+
+    // إضافة معلومات الموظف إلى الطلب
+    req.employee = {
+      id: employee.id,
+      name: employee.name,
+      email: employee.email,
+      role: employee.role,
+      permissions: employee.permissions
+    };
+
+    // تسجيل نشاط الدخول
+    if (req.io) {
+      req.io.to('admin').emit('adminActivity', {
+        employeeId: employee.id,
+        action: 'ACCESS',
+        details: `Accessed ${req.method} ${req.originalUrl}`,
+        timestamp: new Date()
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Auth Middleware Error:', error);
+    const message = await translate('Not authorized, token failed', { to: lang });
+    res.status(401).json({
+      status: false,
+      message,
+      code: 401,
+      data: null
+    });
+  }
 };
 
-module.exports = authenticateToken;
+module.exports = protect;

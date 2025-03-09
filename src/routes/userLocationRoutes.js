@@ -1,4 +1,5 @@
 const express = require('express');
+const protect = require('../middleware/authAdminMiddleware');
 const {
   getUserLocations,
   createUserLocation,
@@ -10,10 +11,10 @@ const {
 
 const router = express.Router();
 
-// User Locations
-router.get("/", getAllUserLocations)
-router.get('/users/:userId/', getUserLocations);
-router.post('/users/:userId/', createUserLocation);
+// مسارات مواقع المستخدمين
+router.get('/', protect, getAllUserLocations);
+router.get('/:userId', getUserLocations);
+router.post('/:userId', createUserLocation);
 router.put('/:id', updateUserLocation);
 router.delete('/:id', deleteUserLocation);
 router.put('/:id/set-default', setDefaultLocation);

@@ -1,0 +1,546 @@
+# دليل تكامل Socket.IO مع Frontend
+
+## التهيئة الأساسية
+
+```javascript
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3003', {
+  auth: {
+    token: 'YOUR_AUTH_TOKEN' // يجب تحديث التوكن عند تسجيل الدخول
+  }
+});
+
+// معالجة الأخطاء
+socket.on('connect_error', (error) => {
+  console.error('Connection error:', error);
+});
+
+socket.on('error', (error) => {
+  console.error('Socket error:', error);
+});
+```
+
+## تسجيل نوع المستخدم
+
+```javascript
+// يجب استدعاء هذا عند تسجيل الدخول
+socket.emit('register', {
+  type: 'user', // or 'worker', 'store', 'admin'
+  id: 'USER_ID'
+});
+```
+
+## واجهة المستخدم (User Interface)
+
+### الاستماع للأحداث
+```javascript
+// المحفظة
+socket.on('walletUpdated', ({ balance, transaction }) => {
+  // تحديث رصيد المحفظة
+  // عرض إشعار بالمعاملة الجديدة
+});
+
+// المكافآت
+socket.on('newReward', (reward) => {
+  // عرض إشعار بالمكافأة الجديدة
+  // تحديث قائمة المكافآت
+});
+
+socket.on('rewardRedeemed', (reward) => {
+  // تحديث حالة المكافأة
+  // عرض إشعار باستخدام المكافأة
+});
+
+socket.on('rewardDeleted', ({ id, type }) => {
+  // إزالة المكافأة من القائمة
+  // عرض إشعار بالحذف
+});
+
+// الطلبات
+socket.on('orderCreated', (order) => {
+  // تحديث قائمة الطلبات
+  // عرض إشعار للمستخدم
+});
+
+socket.on('orderUpdated', (order) => {
+  // تحديث حالة الطلب في الواجهة
+  // عرض إشعار بالتحديث
+});
+
+socket.on('orderCompleted', (order) => {
+  // تحديث حالة الطلب
+  // عرض نافذة التقييم
+});
+
+socket.on('orderDeleted', ({ id }) => {
+  // إزالة الطلب من القائمة
+  // عرض إشعار بالحذف
+});
+
+// الحساب
+socket.on('passwordChanged', ({ timestamp }) => {
+  // عرض إشعار بتغيير كلمة المرور
+  // تسجيل الخروج وإعادة التوجيه لصفحة تسجيل الدخول
+});
+
+socket.on('verificationCodeResent', ({ timestamp }) => {
+  // عرض إشعار بإرسال الرمز الجديد
+  // تحديث واجهة إدخال الرمز
+});
+
+socket.on('accountVerified', ({ timestamp }) => {
+  // عرض إشعار بنجاح التحقق
+  // إعادة التوجيه للصفحة الرئيسية
+});
+
+// المواقع
+socket.on('newLocation', (location) => {
+  // تحديث قائمة المواقع
+  // عرض إشعار بالإضافة
+});
+
+socket.on('locationUpdated', (location) => {
+  // تحديث بيانات الموقع في القائمة
+});
+
+socket.on('defaultLocationChanged', (location) => {
+  // تحديث الموقع الافتراضي
+  // عرض إشعار بالتغيير
+});
+
+socket.on('locationDeleted', ({ id }) => {
+  // إزالة الموقع من القائمة
+});
+```
+
+### إرسال الأحداث
+```javascript
+// المحفظة
+socket.emit('addBalance', {
+  userId,
+  amount,
+  type,
+  description
+});
+
+socket.emit('deductBalance', {
+  userId,
+  amount,
+  type,
+  description
+});
+
+// المكافآت
+socket.emit('redeemReward', {
+  rewardId,
+  userId
+});
+
+// الطلبات
+socket.emit('createOrder', orderData);
+
+socket.emit('updateOrder', {
+  orderId: 'ORDER_ID',
+  status: 'NEW_STATUS',
+  updatedBy: 'user'
+});
+
+// التقييمات
+socket.emit('createReview', reviewData);
+
+// المواقع
+socket.emit('createUserLocation', locationData);
+
+socket.emit('updateUserLocation', {
+  id: 'LOCATION_ID',
+  ...updateData
+});
+
+socket.emit('setDefaultLocation', {
+  id: 'LOCATION_ID'
+});
+```
+
+## واجهة السائق (Driver Interface)
+
+### الاستماع للأحداث
+```javascript
+// تحديث الملف الشخصي
+socket.on('profileUpdated', (driver) => {
+  // تحديث بيانات الملف الشخصي
+});
+
+// تحديث حالة التوفر
+socket.on('driverAvailabilityChanged', ({ driverId, isAvailable }) => {
+  // تحديث حالة التوفر في الواجهة
+});
+
+// طلب جديد
+socket.on('newOrder', ({ type, order }) => {
+  if (type === 'delivery') {
+    // عرض إشعار بالطلب الجديد
+    // تحديث قائمة الطلبات
+  }
+});
+
+// تحديث طلب
+socket.on('orderUpdated', (order) => {
+  // تحديث حالة الطلب في الواجهة
+});
+
+// تقييم جديد
+socket.on('newReview', (review) => {
+  // عرض التقييم الجديد
+  // تحديث متوسط التقييمات
+});
+```
+
+### إرسال الأحداث
+```javascript
+// تحديث حالة التوفر
+socket.emit('updateDriverStatus', {
+  driverId: 'DRIVER_ID',
+  isAvailable: true/false
+});
+
+// تحديث حالة الطلب
+socket.emit('updateOrder', {
+  orderId: 'ORDER_ID',
+  status: 'NEW_STATUS',
+  updatedBy: 'driver'
+});
+```
+
+## واجهة العامل (Worker Interface)
+
+### الاستماع للأحداث
+```javascript
+// طلب جديد
+socket.on('newOrder', ({ type, order }) => {
+  if (type === 'service') {
+    // عرض إشعار بالطلب الجديد
+    // تحديث قائمة الطلبات
+  }
+});
+
+// تحديث طلب
+socket.on('orderUpdated', (order) => {
+  // تحديث حالة الطلب في الواجهة
+});
+
+// تقييم جديد
+socket.on('newReview', (review) => {
+  // عرض التقييم الجديد
+  // تحديث متوسط التقييمات
+});
+
+// تحديث الأرباح
+socket.on('earningsUpdated', ({ totalEarned }) => {
+  // تحديث عرض الأرباح
+});
+
+// تحديث الملف الشخصي
+socket.on('profileUpdated', (worker) => {
+  // تحديث بيانات الملف الشخصي
+});
+
+// تحديث الجدول
+socket.on('scheduleUpdated', (schedule) => {
+  // تحديث عرض الجدول
+});
+```
+
+### إرسال الأحداث
+```javascript
+// تحديث حالة الطلب
+socket.emit('updateOrder', {
+  orderId: 'ORDER_ID',
+  status: 'NEW_STATUS',
+  updatedBy: 'worker'
+});
+
+// تحديث حالة التوفر
+socket.emit('updateWorkerStatus', {
+  workerId: 'WORKER_ID',
+  isAvailable: true/false
+});
+
+// تحديث الجدول
+socket.emit('updateSchedule', {
+  workerId: 'WORKER_ID',
+  schedule: scheduleData
+});
+```
+
+## واجهة المتجر (Store Interface)
+
+### الاستماع للأحداث
+```javascript
+// طلب جديد
+socket.on('newOrder', ({ type, order }) => {
+  if (type === 'delivery') {
+    // عرض إشعار بالطلب الجديد
+    // تحديث قائمة الطلبات
+  }
+});
+
+// تحديث طلب
+socket.on('orderUpdated', (order) => {
+  // تحديث حالة الطلب في الواجهة
+});
+
+// تحديث حالة المتجر
+socket.on('storeStatusUpdated', (store) => {
+  // تحديث حالة المتجر في الواجهة
+});
+
+// منتج جديد
+socket.on('newProduct', (product) => {
+  // تحديث قائمة المنتجات
+});
+
+// عرض جديد
+socket.on('newOffer', (offer) => {
+  // تحديث قائمة العروض
+});
+
+// كوبون جديد
+socket.on('newCoupon', (coupon) => {
+  // تحديث قائمة الكوبونات
+});
+
+// استخدام كوبون
+socket.on('couponUsed', ({ couponId, discountAmount, orderAmount }) => {
+  // تحديث إحصائيات الكوبون
+});
+```
+
+## واجهة لوحة التحكم (Dashboard Interface)
+
+### الاستماع للأحداث
+```javascript
+// تحديث إحصائيات لوحة التحكم
+socket.on('dashboardStatsUpdated', (stats) => {
+  // تحديث عرض الإحصائيات
+});
+
+// تحديث الإيرادات
+socket.on('revenueUpdated', (revenueData) => {
+  // تحديث عرض الإيرادات
+});
+
+// تحديث التحليلات في الوقت الفعلي
+socket.on('realTimeAnalyticsUpdated', (analytics) => {
+  // تحديث عرض التحليلات
+});
+
+// المستخدمين
+socket.on('newUser', (user) => {
+  // تحديث قائمة المستخدمين
+  // عرض إشعار
+});
+
+socket.on('userLogin', ({ userId, role, timestamp }) => {
+  // تحديث سجل النشاط
+});
+
+socket.on('userVerified', ({ userId, timestamp }) => {
+  // تحديث حالة المستخدم
+});
+
+// العمال
+socket.on('newWorker', (worker) => {
+  // تحديث قائمة العمال
+});
+
+socket.on('workersUpdated', (workers) => {
+  // تحديث قائمة العمال
+});
+
+// السائقين
+socket.on('newDriver', (driver) => {
+  // تحديث قائمة السائقين
+});
+
+socket.on('driversUpdated', (drivers) => {
+  // تحديث قائمة السائقين
+});
+
+socket.on('driverDeleted', ({ id }) => {
+  // إزالة السائق من القائمة
+});
+
+// المتاجر
+socket.on('storesUpdated', (stores) => {
+  // تحديث قائمة المتاجر
+});
+
+socket.on('newStore', (store) => {
+  // تحديث قائمة المتاجر
+});
+
+// المواقع
+socket.on('userLocationsUpdated', (locations) => {
+  // تحديث قائمة المواقع
+});
+
+// المحفظة
+socket.on('walletTransactionCreated', (transaction) => {
+  // تحديث سجل المعاملات
+  // عرض إشعار بالمعاملة الجديدة
+});
+
+// المكافآت
+socket.on('rewardsUpdated', (rewards) => {
+  // تحديث قائمة المكافآت
+});
+
+socket.on('rewardCreated', (reward) => {
+  // إضافة المكافأة الجديدة للقائمة
+});
+
+socket.on('rewardDeleted', ({ id }) => {
+  // إزالة المكافأة من القائمة
+});
+```
+
+## ملاحظات مهمة
+
+1. إدارة الاتصال:
+```javascript
+// إغلاق الاتصال عند تسجيل الخروج
+function logout() {
+  socket.disconnect();
+  // ... باقي عملية تسجيل الخروج
+}
+
+// إعادة الاتصال عند فقدانه
+socket.on('disconnect', (reason) => {
+  if (reason === 'io server disconnect') {
+    socket.connect();
+  }
+});
+```
+
+2. معالجة الأخطاء:
+```javascript
+socket.on('connect_error', (error) => {
+  // عرض رسالة خطأ للمستخدم
+  // محاولة إعادة الاتصال تلقائياً
+  setTimeout(() => {
+    socket.connect();
+  }, 5000);
+});
+```
+
+3. تنظيف المستمعين:
+```javascript
+// مع React Hooks
+useEffect(() => {
+  const events = [
+    'walletUpdated',
+    'newReward',
+    'orderUpdated',
+
+
+  ];
+
+  events.forEach(event => {
+    socket.on(event, eventHandler);
+  });
+
+  return () => {
+    events.forEach(event => {
+      socket.off(event);
+    });
+  };
+}, []);
+```
+
+4. إدارة الحالة:
+```javascript
+// مع Redux
+import { createSlice } from '@reduxjs/toolkit';
+
+const socketSlice = createSlice({
+  name: 'socket',
+  initialState: {
+    connected: false,
+    notifications: []
+  },
+  reducers: {
+    setConnected: (state, action) => {
+      state.connected = action.payload;
+    },
+    addNotification: (state, action) => {
+      state.notifications.push(action.payload);
+    }
+  }
+});
+
+// مع Zustand
+import create from 'zustand';
+
+const useSocketStore = create((set) => ({
+  connected: false,
+  notifications: [],
+  setConnected: (status) => set({ connected: status }),
+  addNotification: (notification) => 
+    set((state) => ({ 
+      notifications: [...state.notifications, notification] 
+    }))
+}));
+```
+
+5. الإشعارات:
+```javascript
+// تهيئة الإشعارات
+async function initializeNotifications() {
+  if ('Notification' in window) {
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  }
+  return false;
+}
+
+// عرض الإشعارات
+function showNotification(title, options = {}) {
+  if (Notification.permission === 'granted') {
+    const notification = new Notification(title, {
+      icon: '/path/to/icon.png',
+      badge: '/path/to/badge.png',
+      ...options
+    });
+
+    notification.onclick = function() {
+      window.focus();
+      this.close();
+    };
+  }
+}
+```
+
+6. الترجمة:
+```javascript
+import next-intl from 'next-intl';
+
+socket.on('orderCreated', (order) => {
+  showNotification(
+    next-intl.t('notifications.newOrder'),
+    next-intl.t('notifications.orderDetails', { orderId: order.id })
+  );
+});
+```
+
+7. إدارة الحالة:
+```javascript
+// استخدام Redux/Zustand مع Socket.IO
+socket.on('orderUpdated', (order) => {
+  store.dispatch(updateOrder(order));
+  // أو
+  useStore.setState(state => ({
+    orders: state.orders.map(o => o.id === order.id ? order : o)
+  }));
+});
+``` 

@@ -1,4 +1,5 @@
 const express = require('express');
+const protect = require('../middleware/authAdminMiddleware');
 const {
   getAllStores,
   getStoreById,
@@ -31,7 +32,7 @@ const router = express.Router();
 // stores
 router.get('/', getAllStores);
 router.get('/:id', getStoreById);
-router.post('/', createStore);
+router.post('/', protect, createStore);
 router.put('/:id', updateStore);
 router.delete('/:id', deleteStore);
 
@@ -42,11 +43,11 @@ router.post('/:storeId/categories', createStoreCategory);
 
 // منتجات المتجر
 router.get('/:storeId/products', getStoreProducts);
-router.post('/:storeId/products', createStoreProduct);
+router.post('/:storeId/products', protect, createStoreProduct);
 
 // عروض المتجر
 router.get('/:storeId/offers', getStoreOffers);
-router.post('/:storeId/offers', createStoreOffer);
+router.post('/:storeId/offers', protect, createStoreOffer);
 
 // فروع المتجر
 router.get('/:storeId/locations', getStoreLocations);
@@ -60,9 +61,9 @@ router.delete('/:storeId/discounts/:id', deleteDiscount);
 
 // الكوبونات
 router.get('/:storeId/coupons', getStoreCoupons);
-router.post('/:storeId/coupons', createCoupon);
+router.post('/:storeId/coupons', protect, createCoupon);
 router.put('/:storeId/coupons/:id', updateCoupon);
 router.delete('/:storeId/coupons/:id', deleteCoupon);
-router.post('/:storeId/coupons/validate', validateCoupon);
+router.post('/:storeId/validate-coupon', validateCoupon);
 
 module.exports = router; 

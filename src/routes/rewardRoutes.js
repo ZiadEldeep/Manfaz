@@ -5,7 +5,7 @@ const {
   checkGiftCardBalance,
   redeemGiftCard,
   createReward,
-  getRewards,
+  getAllRewards,
   redeemReward,
   getUserRewards,
   updateReward,
@@ -22,7 +22,7 @@ router.post('/gift-cards/:code/redeem', redeemGiftCard);
 
 // Rewards Routes
 router.post('/rewards', createReward);
-router.get('/stores/:storeId/rewards', getRewards);
+router.get('/stores/:storeId/rewards', getAllRewards);
 router.post('/rewards/:id/redeem', redeemReward);
 router.get('/users/:userId/rewards', getUserRewards);
 router.put('/rewards/:id', updateReward);

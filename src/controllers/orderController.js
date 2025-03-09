@@ -1,32 +1,34 @@
 const { Prisma } = require('@prisma/client');
 const prisma = require('../prismaClient');
 const translate = require('translate-google');
+
 // Get All Orders
 const getAllOrders = async (req, res) => {
   const lang = req.query.lang || 'en';
   const { userId, role, limit = 10, page = 1, search, status, paymentStatus } = req.query;
   const skip = (page - 1) * limit;
-  let searchTranslated = search ? await translate(search, { to: lang }) : undefined;
-  let searchCondition = {};
-  if (searchTranslated) {
-    searchCondition = {
-      OR: [
-        { location: { address: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } } },
-        { store: { products: { some: { product: { name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } } } } } }
-      ]
-    };
-  }
-  let statusCondition = {};
-  if (status) {
-    statusCondition = { status: status };
-  }
-  let paymentStatusCondition = {};
-  if (paymentStatus) {
-    paymentStatusCondition = { paymentStatus: paymentStatus };
-  }
-  const whereCondition =
-    role === 'user' ? { userId } : role === 'worker' ? { providerId: userId } : { deliveryDriverId: userId }
   try {
+    let searchTranslated = search ? await translate(search, { to: lang }) : undefined;
+    let searchCondition = {};
+    if (searchTranslated) {
+      searchCondition = {
+        OR: [
+          { location: { address: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } } },
+          { store: { products: { some: { product: { name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } } } } } }
+        ]
+      };
+    }
+    let statusCondition = {};
+    if (status) {
+      statusCondition = { status: status };
+    }
+    let paymentStatusCondition = {};
+    if (paymentStatus) {
+      paymentStatusCondition = { paymentStatus: paymentStatus };
+    }
+    const whereCondition =
+      role === 'user' ? { userId } : role === 'worker' ? { providerId: userId } : { deliveryDriverId: userId }
+
     const orders = await prisma.order.findMany({
       where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition },
       include: {
@@ -40,38 +42,33 @@ const getAllOrders = async (req, res) => {
       skip,
       take: +limit
     });
+
     const message = await translate('Orders retrieved successfully', { to: lang });
 
-    const totalOrders = await prisma.order.count({ where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition } });
+    const totalOrders = await prisma.order.count({ 
+      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition } 
+    });
     const totalPages = Math.ceil(totalOrders / limit);
-    if (lang === 'en') {
-      res.status(200).json({
-        status: true,
-        message,
-        code: 200,
-        data: {orders,totalOrders, totalPages, currentPage: page}
+
+    // إرسال التحديث عبر Socket.IO
+    if (req.io) {
+      req.io.to('admin').emit('ordersUpdated', {
+        orders,
+        totalOrders,
+        totalPages,
+        currentPage: page
       });
-      return;
     }
 
-    const translatedOrders = await Promise.all(orders.map(async (order) => {
-      const [ translatedAddress] = await Promise.all([
-        order.address ? translate(order.location.address, { to: lang }) : null
-      ]);
-
-      return {
-        ...order,
-        address: translatedAddress
-      };
-    }));
     res.status(200).json({
       status: true,
       message,
       code: 200,
       data: {
-        orders: translatedOrders, totalPages,
-        currentPage: page,
-        totalOrders
+        orders,
+        totalOrders,
+        totalPages,
+        currentPage: page
       }
     });
   } catch (error) {
@@ -101,9 +98,9 @@ const createOrder = async (req, res) => {
       ...createOrderData
     } = req.body;
 
-    const service =type === "service" ? await prisma.serviceParameter.findUnique({
+    const service = type === "service" ? await prisma.serviceParameter.findUnique({
       where: { id: serviceId },
-    }):null;
+    }) : null;
 
     if (!service && type === "service") {
       const message = await translate('Service not found', { to: lang });
@@ -111,22 +108,23 @@ const createOrder = async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId,role:"user" },
+      where: { id: userId, role: "user" },
     });
     if (!user) {
       const message = await translate('User not found', { to: lang });
-      return res.status(404).json({ status: false, message, code: 404, data: null });      
+      return res.status(404).json({ status: false, message, code: 404, data: null });
     }
     const location = await prisma.userLocation.findUnique({
-    where:{id:locationId}
-    })
+      where: { id: locationId }
+    });
     if (!location) {
       const message = await translate('User Location not found', { to: lang });
-      return res.status(404).json({ status: false, message, code: 404, data: null });  
+      return res.status(404).json({ status: false, message, code: 404, data: null });
     }
-    // التحقق من نوع الطلب وإنشاءه
+
+    let newOrder;
     if (type === "service") {
-      if (!userId || !serviceId || !providerId || !totalAmount || !price || !paymentMethod ) {
+      if (!userId || !serviceId || !providerId || !totalAmount || !price || !paymentMethod) {
         const message = await translate('All fields are required', { to: lang });
         return res.status(400).json({ status: false, message, code: 400, data: null });
       }
@@ -138,124 +136,121 @@ const createOrder = async (req, res) => {
         return res.status(404).json({ status: false, message, code: 404, data: null });
       }
 
-      // ترجمة الحقول النصية إلى الإنجليزية
       const [notesTranslated] = await Promise.all([
         translate(notes, { to: "en" })
       ]);
 
-      const newOrder = await prisma.order.create({
+      newOrder = await prisma.order.create({
         data: {
           user: {
-            connect: { id: user.id } // Connect the user by their ID
+            connect: { id: user.id }
           },
           serviceId,
           providerId,
           totalAmount,
-          notes:notesTranslated,
+          notes: notesTranslated,
           imageUrl,
           location: {
-            connect: { id: location.id } // Connect the location by their ID
+            connect: { id: location.id }
           },
           price,
-          duration,...createOrderData,
+          duration,
+          ...createOrderData,
           paymentMethod
         },
-      });
-
-      const message = await translate('Order created successfully', { to: lang });
-
-      if (lang === 'en') {
-        res.status(201).json({
-          status: true,
-          message,
-          code: 201,
-          data: newOrder
-        });
-        return;
-      }
-
-      // ترجمة البيانات للغة المطلوبة
-      const [finalNotes] = await Promise.all([
-        translate(newOrder.notes, { to: lang })
-      ]);
-
-      res.status(201).json({
-        status: true,
-        message,
-        code: 201,
-        data: {
-          ...newOrder,
-
-          notes: finalNotes
+        include: {
+          user: true,
+          service: true,
+          provider: true,
+          location: true
         }
       });
-    }else if (type === "delivery"){
-      if (!userId  || !totalAmount  || !price || !paymentMethod ) {
+
+      // إرسال إشعار للعامل عبر Socket.IO
+      if (req.io) {
+        req.io.to(`worker_${providerId}`).emit('newOrder', {
+          type: 'service',
+          order: newOrder
+        });
+      }
+    } else if (type === "delivery") {
+      if (!userId || !totalAmount || !price || !paymentMethod) {
         const message = await translate('All fields are required', { to: lang });
         return res.status(400).json({ status: false, message, code: 400, data: null });
       }
 
-      // ترجمة الحقول النصية إلى الإنجليزية
       const [notesTranslated] = await Promise.all([
         translate(notes, { to: "en" })
       ]);
 
-      const newOrder = await prisma.order.create({
+      newOrder = await prisma.order.create({
         data: {
           user: {
-            connect: { id: user.id } // Connect the user by their ID
+            connect: { id: user.id }
           },
           totalAmount,
-          notes:notesTranslated,
+          notes: notesTranslated,
           imageUrl,
           location: {
-            connect: { id: location.id } // Connect the location by their ID
+            connect: { id: location.id }
           },
           price,
-          duration,...createOrderData,
+          duration,
+          ...createOrderData,
           paymentMethod,
-          store:{
-            create:store.map((store)=>({
-              storeId:store.storeId,
-              products:{
-                create:store.products.map((product)=>({
-                  productId:product.productId,
-                  quantity:product.quantity
+          store: {
+            create: store.map((store) => ({
+              storeId: store.storeId,
+              products: {
+                create: store.products.map((product) => ({
+                  productId: product.productId,
+                  quantity: product.quantity
                 }))
               }
             }))
           }
         },
-      });
-
-      const message = await translate('Order created successfully', { to: lang });
-
-      if (lang === 'en') {
-        res.status(201).json({
-          status: true,
-          message,
-          code: 201,
-          data: newOrder
-        });
-        return;
-      }
-
-      // ترجمة البيانات للغة المطلوبة
-      const [ finalNotes] = await Promise.all([
-        translate(newOrder.notes, { to: lang })
-      ]);
-
-      res.status(201).json({
-        status: true,
-        message,
-        code: 201,
-        data: {
-          ...newOrder,
-          notes: finalNotes
+        include: {
+          user: true,
+          store: {
+            include: {
+              store: true,
+              products: {
+                include: {
+                  product: true
+                }
+              }
+            }
+          },
+          location: true
         }
       });
 
+      // إرسال إشعار للمتاجر عبر Socket.IO
+      if (req.io) {
+        store.forEach(storeItem => {
+          req.io.to(`store_${storeItem.storeId}`).emit('newOrder', {
+            type: 'delivery',
+            order: newOrder
+          });
+        });
+      }
     }
+
+    const message = await translate('Order created successfully', { to: lang });
+
+    // إرسال إشعار للمستخدم وللوحة التحكم
+    if (req.io) {
+      req.io.to(`user_${userId}`).emit('orderCreated', newOrder);
+      req.io.to('admin').emit('newOrder', newOrder);
+    }
+
+    res.status(201).json({
+      status: true,
+      message,
+      code: 201,
+      data: newOrder
+    });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });
@@ -269,43 +264,26 @@ const getOrderById = async (req, res) => {
     const { id } = req.params;
     const order = await prisma.order.findUnique({
       where: { id },
+      include: {
+        user: true,
+        service: true,
+        provider: true,
+        store: true,
+        location: true
+      }
     });
 
     if (!order) {
       const message = await translate('Order not found', { to: lang });
-      return res.status(404).json({
-        status: false,
-        message,
-        code: 404,
-        data: null
-      });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
     }
 
     const message = await translate('Order found', { to: lang });
-
-    if (lang === 'en') {
-      res.status(200).json({
-        status: true,
-        message,
-        code: 200,
-        data: order
-      });
-      return;
-    }
-
-    // ترجمة البيانات للغة المطلوبة
-    const [translatedAddress] = await Promise.all([
-      order.address ? translate(order.address, { to: lang }) : null
-    ]);
-
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: {
-        ...order,
-        address: translatedAddress
-      }
+      data: order
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
@@ -323,7 +301,8 @@ const updateOrder = async (req, res) => {
       totalAmount,
       paymentStatus,
       price,
-      duration
+      duration,
+      updatedBy
     } = req.body;
 
     const order = await prisma.order.findUnique({
@@ -344,28 +323,34 @@ const updateOrder = async (req, res) => {
         price: price || order.price,
         duration: duration || order.duration
       },
+      include: {
+        user: true,
+        provider: true,
+        store: true
+      }
     });
 
-    const message = await translate('Order updated successfully', { to: lang });
-
-    if (lang === 'en') {
-      res.status(200).json({
-        status: true,
-        message,
-        code: 200,
-        data: updatedOrder
-      });
-      return;
+    // إرسال إشعارات عبر Socket.IO
+    if (req.io) {
+      if (updatedBy === 'worker') {
+        req.io.to(`user_${order.userId}`).emit('orderUpdated', updatedOrder);
+      } else if (updatedBy === 'user') {
+        if (order.providerId) {
+          req.io.to(`worker_${order.providerId}`).emit('orderUpdated', updatedOrder);
+        }
+        order.store?.forEach(store => {
+          req.io.to(`store_${store.id}`).emit('orderUpdated', updatedOrder);
+        });
+      }
+      req.io.to('admin').emit('orderUpdated', updatedOrder);
     }
 
-
+    const message = await translate('Order updated successfully', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: {
-        ...updatedOrder,
-      }
+      data: updatedOrder
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
@@ -378,9 +363,13 @@ const deleteOrder = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-
     const order = await prisma.order.findUnique({
       where: { id },
+      include: {
+        user: true,
+        provider: true,
+        store: true
+      }
     });
 
     if (!order) {
@@ -391,6 +380,18 @@ const deleteOrder = async (req, res) => {
     await prisma.order.delete({
       where: { id },
     });
+
+    // إرسال إشعارات عبر Socket.IO
+    if (req.io) {
+      req.io.to(`user_${order.userId}`).emit('orderDeleted', { id });
+      if (order.providerId) {
+        req.io.to(`worker_${order.providerId}`).emit('orderDeleted', { id });
+      }
+      order.store?.forEach(store => {
+        req.io.to(`store_${store.id}`).emit('orderDeleted', { id });
+      });
+      req.io.to('admin').emit('orderDeleted', { id });
+    }
 
     const message = await translate('Order deleted successfully', { to: lang });
     res.status(200).json({
@@ -412,3 +413,4 @@ module.exports = {
   updateOrder,
   deleteOrder,
 };
+// عايز اعمل prompt علشان اعدل بيه في كود backend معمول ب node js , prisma انا عايز احول الapis و الكود ل socket io المشروع متقسم ل  prisma\schema.prisma src\controllers src\middleware src\routes src\utils src\app.js src\prismaClient.js  عايز اعدل في كل فايل بحيث يكون المشروع متكلمل وبدون اخطاء عايز ابعت رسايل في كل عمليه بتتم اول حاجه في عمليات ال orders عايز لما المستخدم يعمل order لو هو نوعه 

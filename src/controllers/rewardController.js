@@ -168,61 +168,20 @@ const redeemGiftCard = async (req, res) => {
   }
 };
 
-// إنشاء مكافأة جديدة
-const createReward = async (req, res) => {
+// الحصول على جميع المكافآت
+const getAllRewards = async (req, res) => {
   const lang = req.query.lang || 'ar';
   try {
-    const { 
-      storeId, 
-      name, 
-      description, 
-      type, 
-      value, 
-      pointsCost 
-    } = req.body;
-
-    if (!storeId || !name || !type || !value || !pointsCost) {
-      const message = await translate('All fields are required', { to: lang });
-      return res.status(400).json({ status: false, message, code: 400, data: null });
-    }
-
-    const reward = await prisma.reward.create({
-      data: {
-        storeId,
-        name,
-        description,
-        type,
-        value,
-        pointsCost
+    const rewards = await prisma.reward.findMany({
+      include: {
+        user: true
       }
     });
 
-    const message = await translate('Reward created successfully', { to: lang });
-    res.status(201).json({
-      status: true,
-      message,
-      code: 201,
-      data: reward
-    });
-  } catch (error) {
-    const message = await translate(error.message, { to: lang });
-    res.status(500).json({ status: false, message, code: 500, data: null });
-  }
-};
-
-// الحصول على المكافآت المتاحة في المتجر
-const getRewards = async (req, res) => {
-  const lang = req.query.lang || 'ar';
-  try {
-    const { storeId } = req.params;
-    const { isActive } = req.query;
-
-    const where = {
-      storeId,
-      ...(isActive !== undefined && { isActive: isActive === 'true' })
-    };
-
-    const rewards = await prisma.reward.findMany({ where });
+    // إرسال تحديث للوحة التحكم
+    if (req.io) {
+      req.io.to('admin').emit('rewardsUpdated', rewards);
+    }
 
     const message = await translate('Rewards retrieved successfully', { to: lang });
     res.status(200).json({
@@ -236,63 +195,119 @@ const getRewards = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
-// استبدال المكافأة
+
+// إنشاء مكافأة جديدة
+const createReward = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { userId, points, type, description, expiryDate } = req.body;
+
+    if (!userId || !points || !type) {
+      const message = await translate('User ID, points, and type are required', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    // ترجمة الوصف والنوع إلى الإنجليزية
+    const [translatedType, translatedDescription] = await Promise.all([
+      translate(type, { to: 'en' }),
+      description ? translate(description, { to: 'en' }) : null
+    ]);
+
+    const newReward = await prisma.reward.create({
+      data: {
+        userId,
+        points,
+        type: translatedType,
+        description: translatedDescription,
+        expiryDate,
+        isActive: true
+      },
+      include: {
+        user: true
+      }
+    });
+
+    // إرسال إشعارات
+    if (req.io) {
+      // إشعار للمستخدم
+      req.io.to(`user_${userId}`).emit('newReward', {
+        ...newReward,
+        type: await translate(newReward.type, { to: lang }),
+        description: newReward.description ? await translate(newReward.description, { to: lang }) : null
+      });
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('rewardCreated', newReward);
+    }
+
+    const message = await translate('Reward created successfully', { to: lang });
+    res.status(201).json({
+      status: true,
+      message,
+      code: 201,
+      data: newReward
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// استخدام المكافأة
 const redeemReward = async (req, res) => {
   const lang = req.query.lang || 'ar';
   try {
     const { id } = req.params;
     const { userId } = req.body;
 
-    // التحقق من وجود المكافأة
-    const reward = await prisma.reward.findUnique({
-      where: { id: parseInt(id) }
+    const reward = await prisma.reward.findFirst({
+      where: {
+        id,
+        userId,
+        isActive: true,
+        expiryDate: {
+          gt: new Date()
+        }
+      }
     });
 
     if (!reward) {
-      const message = await translate('Reward not found', { to: lang });
-      return res.status(404).json({ status: false, message, code: 404, data: null });
-    }
-
-    // التحقق من نقاط المستخدم
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
-    if (!user || user.points < reward.pointsCost) {
-      const message = await translate('Insufficient points', { to: lang });
+      const message = await translate('Invalid or expired reward', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
 
-    // إنشاء سجل استبدال المكافأة وتحديث نقاط المستخدم
-    const [redemption, updatedUser] = await prisma.$transaction([
-      prisma.rewardRedemption.create({
-        data: {
-          userId,
-          rewardId: parseInt(id),
-          pointsUsed: reward.pointsCost
-        }
-      }),
-      prisma.user.update({
-        where: { id: userId },
-        data: {
-          points: {
-            decrement: reward.pointsCost
-          }
-        }
-      })
-    ]);
+    const updatedReward = await prisma.reward.update({
+      where: { id },
+      data: {
+        isActive: false,
+        redeemedAt: new Date()
+      },
+      include: {
+        user: true
+      }
+    });
+
+    // إرسال إشعارات
+    if (req.io) {
+      // إشعار للمستخدم
+      req.io.to(`user_${userId}`).emit('rewardRedeemed', {
+        ...updatedReward,
+        type: await translate(updatedReward.type, { to: lang }),
+        description: updatedReward.description ? 
+          await translate(updatedReward.description, { to: lang }) : null
+      });
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('rewardRedeemed', updatedReward);
+    }
 
     const message = await translate('Reward redeemed successfully', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: {
-        redemption,
-        remainingPoints: updatedUser.points
-      }
+      data: updatedReward
     });
-
   } catch (error) {
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });
@@ -305,38 +320,57 @@ const getUserRewards = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const userRewards = await prisma.rewardRedemption.findMany({
-      where: { userId },
-      include: {
-        reward: true
+    const rewards = await prisma.reward.findMany({
+      where: {
+        userId,
+        isActive: true,
+        expiryDate: {
+          gt: new Date()
+        }
       },
-      orderBy: {
-        createdAt: 'desc'
+      include: {
+        user: true
       }
     });
+
+    // ترجمة المكافآت
+    const translatedRewards = await Promise.all(rewards.map(async (reward) => ({
+      ...reward,
+      type: await translate(reward.type, { to: lang }),
+      description: reward.description ? 
+        await translate(reward.description, { to: lang }) : null
+    })));
 
     const message = await translate('User rewards retrieved successfully', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: userRewards
+      data: translatedRewards
     });
-    
   } catch (error) {
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
-
-// تحديث مكافآت
 const updateReward = async (req, res) => {
   const lang = req.query.lang || 'ar';
   try {
     const { id } = req.params;
-    const reward = await prisma.reward.update({
+    const { userId, points, type, description, expiryDate } = req.body;
+
+    const reward = await prisma.reward.findUnique({
+      where: { id }
+    });
+
+    if (!reward) {
+      const message = await translate('Reward not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    } 
+
+    const updatedReward = await prisma.reward.update({
       where: { id },
-      data: req.body
+      data: { userId, points, type, description, expiryDate }
     });
 
     const message = await translate('Reward updated successfully', { to: lang });
@@ -344,29 +378,56 @@ const updateReward = async (req, res) => {
       status: true,
       message,
       code: 200,
-      data: reward
-    });
+      data: updatedReward
+    }); 
   } catch (error) {
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
-};
+};      
 
-// حذف مكافآت
+
+
+// حذف مكافأة
 const deleteReward = async (req, res) => {
   const lang = req.query.lang || 'ar';
   try {
     const { id } = req.params;
-    const reward = await prisma.reward.delete({
+
+    const reward = await prisma.reward.findUnique({
+      where: { id },
+      include: {
+        user: true
+      }
+    });
+
+    if (!reward) {
+      const message = await translate('Reward not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+
+    await prisma.reward.delete({
       where: { id }
     });
+
+    // إرسال إشعارات
+    if (req.io) {
+      // إشعار للمستخدم
+      req.io.to(`user_${reward.userId}`).emit('rewardDeleted', {
+        id,
+        type: await translate(reward.type, { to: lang })
+      });
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('rewardDeleted', { id });
+    }
 
     const message = await translate('Reward deleted successfully', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: reward
+      data: null
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
@@ -374,16 +435,15 @@ const deleteReward = async (req, res) => {
   }
 };
 
-
 module.exports = {
   createGiftCard,
   getGiftCards,
   checkGiftCardBalance,
   redeemGiftCard,
+  getAllRewards,
   createReward,
-  getRewards,
   redeemReward,
   getUserRewards,
-  updateReward,
-  deleteReward
+  deleteReward,
+  updateReward
 }; 

@@ -1,6 +1,9 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+const initializeSocket = require('./socket');
 
 // Import Routes
 const userRoutes = require('./routes/userRoutes');
@@ -19,24 +22,44 @@ const userLocationRoutes = require('./routes/userLocationRoutes');
 const employeeRoutes = require('./routes/employeeRoutes.js');
 const employeeActivitiesRoutes = require('./routes/employeeActivitiesRoutes.js');
 const dashboardRoutes = require('./routes/dashboardRoutes.js');
+
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: ['http://localhost:3000', "http://manfaz.vercel.app/", "https://manfaz-dashboard.vercel.app/"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+  }
+});
+
+// تهيئة Socket.IO
+initializeSocket(io);
 
 // Middleware
-app.use(bodyParser.json());
 app.use(cors({
-    origin: ['http://localhost:3000',"http://manfaz.vercel.app/","https://manfaz-dashboard.vercel.app/"], // Allow requests from this origin
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed methods
+    origin: ['http://localhost:3000',"http://manfaz.vercel.app/","https://manfaz-dashboard.vercel.app/"],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true // Allow credentials if needed
+    credentials: true
 }));
+app.use(express.json());
+app.use(cookieParser());
+
+// إضافة io إلى req لاستخدامه في المتحكمات
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "http://localhost:3000"); 
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.header("Access-Control-Allow-Credentials", "true");
+    // Add Socket.IO instance to request object
+    req.io = io;
     next();
 });
-// Routes
+
+// تسجيل الموجهات
+
 app.use('/auth', authRoutes);
 app.use('/auth-admin', authAdminRoutes);
 app.use('/users', userRoutes);
@@ -54,6 +77,29 @@ app.use('/employees', employeeRoutes);
 app.use('/employees-activities', employeeActivitiesRoutes);
 app.use("/dashboard", dashboardRoutes);
 
-// Start Server
+// معالجة الأخطاء
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    status: false,
+    message: 'حدث خطأ في الخادم',
+    code: 500,
+    data: null
+  });
+});
+
+// معالجة المسارات غير الموجودة
+app.use((req, res) => {
+  res.status(404).json({
+    status: false,
+    message: 'المسار غير موجود',
+    code: 404,
+    data: null
+  });
+});
+
 const PORT = process.env.PORT || 3003;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+httpServer.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

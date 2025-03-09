@@ -402,6 +402,278 @@ const deleteTransaction = async (req, res) => {
   }
 };
 
+// الحصول على محفظة المستخدم
+const getUserWallet = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { userId } = req.params;
+
+    const wallet = await prisma.wallet.findUnique({
+      where: { userId },
+      include: {
+        transactions: {
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 10
+        }
+      }
+    });
+
+    if (!wallet) {
+      const message = await translate('Wallet not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+
+    // ترجمة المعاملات
+    const translatedTransactions = await Promise.all(
+      wallet.transactions.map(async (transaction) => ({
+        ...transaction,
+        type: await translate(transaction.type, { to: lang }),
+        description: transaction.description ? 
+          await translate(transaction.description, { to: lang }) : null
+      }))
+    );
+
+    const message = await translate('Wallet retrieved successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
+        ...wallet,
+        transactions: translatedTransactions
+      }
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// إضافة رصيد للمحفظة
+const addBalance = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { userId } = req.params;
+    const { amount, type, description, referenceId } = req.body;
+
+    if (!amount || !type) {
+      const message = await translate('Amount and type are required', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    // ترجمة النوع والوصف إلى الإنجليزية
+    const [translatedType, translatedDescription] = await Promise.all([
+      translate(type, { to: 'en' }),
+      description ? translate(description, { to: 'en' }) : null
+    ]);
+
+    const [wallet, transaction] = await prisma.$transaction([
+      prisma.wallet.upsert({
+        where: { userId },
+        update: {
+          balance: {
+            increment: amount
+          }
+        },
+        create: {
+          userId,
+          balance: amount
+        }
+      }),
+      prisma.walletTransaction.create({
+        data: {
+          userId,
+          amount,
+          type: translatedType,
+          description: translatedDescription,
+          referenceId,
+          status: 'COMPLETED'
+        }
+      })
+    ]);
+
+    // إرسال إشعارات
+    if (req.io) {
+      // إشعار للمستخدم
+      req.io.to(`user_${userId}`).emit('walletUpdated', {
+        balance: wallet.balance,
+        transaction: {
+          ...transaction,
+          type: await translate(transaction.type, { to: lang }),
+          description: transaction.description ? 
+            await translate(transaction.description, { to: lang }) : null
+        }
+      });
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('walletTransactionCreated', transaction);
+    }
+
+    const message = await translate('Balance added successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
+        wallet,
+        transaction
+      }
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// خصم رصيد من المحفظة
+const deductBalance = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { userId } = req.params;
+    const { amount, type, description, referenceId } = req.body;
+
+    if (!amount || !type) {
+      const message = await translate('Amount and type are required', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    const wallet = await prisma.wallet.findUnique({
+      where: { userId }
+    });
+
+    if (!wallet || wallet.balance < amount) {
+      const message = await translate('Insufficient balance', { to: lang });
+      return res.status(400).json({ status: false, message, code: 400, data: null });
+    }
+
+    // ترجمة النوع والوصف إلى الإنجليزية
+    const [translatedType, translatedDescription] = await Promise.all([
+      translate(type, { to: 'en' }),
+      description ? translate(description, { to: 'en' }) : null
+    ]);
+
+    const [updatedWallet, transaction] = await prisma.$transaction([
+      prisma.wallet.update({
+        where: { userId },
+        data: {
+          balance: {
+            decrement: amount
+          }
+        }
+      }),
+      prisma.walletTransaction.create({
+        data: {
+          userId,
+          amount: -amount,
+          type: translatedType,
+          description: translatedDescription,
+          referenceId,
+          status: 'COMPLETED'
+        }
+      })
+    ]);
+
+    // إرسال إشعارات
+    if (req.io) {
+      // إشعار للمستخدم
+      req.io.to(`user_${userId}`).emit('walletUpdated', {
+        balance: updatedWallet.balance,
+        transaction: {
+          ...transaction,
+          type: await translate(transaction.type, { to: lang }),
+          description: transaction.description ? 
+            await translate(transaction.description, { to: lang }) : null
+        }
+      });
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('walletTransactionCreated', transaction);
+    }
+
+    const message = await translate('Balance deducted successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
+        wallet: updatedWallet,
+        transaction
+      }
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
+// الحصول على معاملات المحفظة
+const getWalletTransactionsUser = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { userId } = req.params;
+    const { page = 1, limit = 10, startDate, endDate } = req.query;
+
+    const skip = (page - 1) * limit;
+
+    let dateFilter = {};
+    if (startDate && endDate) {
+      dateFilter = {
+        createdAt: {
+          gte: new Date(startDate),
+          lte: new Date(endDate)
+        }
+      };
+    }
+
+    const [transactions, total] = await prisma.$transaction([
+      prisma.walletTransaction.findMany({
+        where: {
+          userId,
+          ...dateFilter
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: parseInt(limit)
+      }),
+      prisma.walletTransaction.count({
+        where: {
+          userId,
+          ...dateFilter
+        }
+      })
+    ]);
+
+    // ترجمة المعاملات
+    const translatedTransactions = await Promise.all(
+      transactions.map(async (transaction) => ({
+        ...transaction,
+        type: await translate(transaction.type, { to: lang }),
+        description: transaction.description ? 
+          await translate(transaction.description, { to: lang }) : null
+      }))
+    );
+
+    const message = await translate('Transactions retrieved successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
+        transactions: translatedTransactions,
+        total,
+        page: parseInt(page),
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
 
 module.exports = {
   getAllWallets,
@@ -412,5 +684,9 @@ module.exports = {
   getWalletTransactions,
   createTransaction,
   updateTransactionStatus,
-  deleteTransaction
+  deleteTransaction,
+  getUserWallet,
+  addBalance,
+  deductBalance,
+  getWalletTransactionsUser
 };

@@ -208,7 +208,7 @@ const register = async (req, res) => {
 
 // Login
 const login = async (req, res) => {
-  const lang = req.query.lang || "en";
+  const lang = req.query.lang || "ar";
   try {
     // التحقق من وجود إما البريد الإلكتروني أو رقم الهاتف
     const { email, password, phone, role, isActive } = req.body;
@@ -343,7 +343,7 @@ const login = async (req, res) => {
 
 // Change Password
 const changePassword = async (req, res) => {
-  const lang = req.query.lang || "en";
+  const lang = req.query.lang || "ar";
   try {
     const { adminId, oldPassword, newPassword } = req.body;
 
@@ -400,7 +400,7 @@ const changePassword = async (req, res) => {
   }
 };
 const resendVerificationCode = async (req, res) => {
-  const lang = req.query.lang || "en";
+  const lang = req.query.lang || "ar";
   try {
     const { id } = req.body;
 
@@ -461,7 +461,7 @@ const resendVerificationCode = async (req, res) => {
   }
 };
 const verifyAccount = async (req, res) => {
-  const lang = req.query.lang || "en";
+  const lang = req.query.lang || "ar";
   try {
     const { id, verificationCode } = req.body;
 
@@ -531,7 +531,7 @@ const verifyAccount = async (req, res) => {
 
 // تجديد التوكن
 const refresh = async (req, res) => {
-  const lang = req.query.lang || "en";
+  const lang = req.query.lang || "ar";
   const refreshToken = req.body.refreshToken;
   let message = await translate("Unauthorized", { to: lang });
   if (!refreshToken)

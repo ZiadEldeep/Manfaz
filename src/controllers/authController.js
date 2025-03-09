@@ -62,16 +62,13 @@ const register = async (req, res) => {
     const message = await translate('Registration successful. Verification code sent.', { to: lang });
     const refreshToken = generateRefreshToken(newUser);
     const token = generateAccessToken(newUser);
-    if (lang === 'en') {
-      res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
-      res.status(201).json({
-        status: true,
-        message,
-        code: 201,
-        data: newUser,
-        token,
+
+    // إرسال إشعار للوحة التحكم عن المستخدم الجديد
+    if (req.io) {
+      req.io.to('admin').emit('newUser', {
+        ...newUser,
+        password: ""
       });
-      return;
     }
 
     res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
@@ -171,18 +168,17 @@ const login = async (req, res) => {
     }
     const refreshToken = generateRefreshToken(user);
       const token = generateAccessToken(user);
-    if (lang === 'en') {
-      res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
-      res.status(200).json({
-        status: true,
-        message: 'Login successful',
-        code: 200,
-        data: user,
-        token
+
+    // إرسال إشعار بتسجيل الدخول
+    if (req.io) {
+      req.io.to('admin').emit('userLogin', {
+        userId: user.id,
+        role: user.role,
+        timestamp: new Date()
       });
-      return;
     }
 
+    const message = await translate('Login successful', { to: lang });
     res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict" });
     res.status(200).json({
       status: true,
@@ -190,7 +186,9 @@ const login = async (req, res) => {
       code: 200,
       data: {
         ...user,
+        password: undefined
       },
+      token
     });
   } catch (error) {
     const message = await translate(`Internal server error: ${error.message}`, { to: lang });
@@ -236,6 +234,13 @@ const changePassword = async (req, res) => {
       where: { id: userId },
       data: { password: newPassword },
     });
+
+    // إرسال إشعار بتغيير كلمة المرور
+    if (req.io) {
+      req.io.to(`user_${userId}`).emit('passwordChanged', {
+        timestamp: new Date()
+      });
+    }
 
     const message = await translate('Password updated successfully', { to: lang });
     res.status(200).json({
@@ -293,6 +298,13 @@ const resendVerificationCode = async (req, res) => {
 
     // Send verification email
     await sendConfirmationEmail(user.email, verificationCode);
+
+    // إرسال إشعار بإعادة إرسال رمز التحقق
+    if (req.io) {
+      req.io.to(`user_${id}`).emit('verificationCodeResent', {
+        timestamp: new Date()
+      });
+    }
 
     const message = await translate('Verification code resent successfully', { to: lang });
     res.status(200).json({
@@ -355,12 +367,26 @@ const verifyAccount = async (req, res) => {
       data: { isVerified: true }
     });
 
+    // إرسال إشعار بتفعيل الحساب
+    if (req.io) {
+      req.io.to(`user_${id}`).emit('accountVerified', {
+        timestamp: new Date()
+      });
+      req.io.to('admin').emit('userVerified', {
+        userId: id,
+        timestamp: new Date()
+      });
+    }
+
     const message = await translate('Account verified successfully', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: user2
+      data: {
+        ...user2,
+        password: undefined
+      }
     });
   } catch (error) {
     const message = await translate(`Internal server error: ${error.message}`, { to: lang });

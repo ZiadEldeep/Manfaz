@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const  translate  = require('translate-google');
+const translate = require('translate-google');
 
 const getAllUserLocations = async (req, res) => {
   const lang = req.query.lang || 'ar';
@@ -11,6 +11,12 @@ const getAllUserLocations = async (req, res) => {
         { createdAt: 'desc' }
       ]
     });
+
+    // إرسال تحديث للوحة التحكم
+    if (req.io) {
+      req.io.to('admin').emit('userLocationsUpdated', locations);
+    }
+
     const message = await translate('Locations retrieved successfully', { to: lang });
     res.status(200).json({
       status: true,
@@ -26,13 +32,14 @@ const getAllUserLocations = async (req, res) => {
       error: error.message
     });
   }
-}
+};
+
 // الحصول على عناوين المستخدم
 const getUserLocations = async (req, res) => {
   const lang = req.query.lang || 'ar';
   try {
     const { userId } = req.params;
-    
+
     const locations = await prisma.userLocation.findMany({
       where: { userId },
       orderBy: [
@@ -107,6 +114,18 @@ const createUserLocation = async (req, res) => {
       }
     });
 
+    // إرسال إشعارات
+    if (req.io) {
+      // إشعار للمستخدم
+      req.io.to(`user_${userId}`).emit('newLocation', location);
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('newUserLocation', {
+        userId,
+        location
+      });
+    }
+
     const message = await translate('Location added successfully', { to: lang });
     res.status(201).json({
       status: true,
@@ -127,14 +146,19 @@ const updateUserLocation = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
+    const location = await prisma.userLocation.findUnique({
+      where: { id }
+    });
+
+    if (!location) {
+      const message = await translate('Location not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+
     // إذا كان التحديث يتضمن جعل العنوان افتراضي
     if (updateData.isDefault) {
-      const location = await prisma.userLocation.findUnique({
-        where: { id }
-      });
-      
       await prisma.userLocation.updateMany({
-        where: { 
+        where: {
           userId: location.userId,
           id: { not: id }
         },
@@ -142,17 +166,29 @@ const updateUserLocation = async (req, res) => {
       });
     }
 
-    const location = await prisma.userLocation.update({
+    const updatedLocation = await prisma.userLocation.update({
       where: { id },
       data: updateData
     });
+
+    // إرسال إشعارات التحديث
+    if (req.io) {
+      // إشعار للمستخدم
+      req.io.to(`user_${location.userId}`).emit('locationUpdated', updatedLocation);
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('userLocationUpdated', {
+        userId: location.userId,
+        location: updatedLocation
+      });
+    }
 
     const message = await translate('Location updated successfully', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: location
+      data: updatedLocation
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
@@ -166,7 +202,16 @@ const deleteUserLocation = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const location = await prisma.userLocation.delete({
+    const location = await prisma.userLocation.findUnique({
+      where: { id }
+    });
+
+    if (!location) {
+      const message = await translate('Location not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+
+    await prisma.userLocation.delete({
       where: { id }
     });
 
@@ -182,7 +227,24 @@ const deleteUserLocation = async (req, res) => {
           where: { id: oldestLocation.id },
           data: { isDefault: true }
         });
+
+        // إرسال إشعار بتحديث العنوان الافتراضي
+        if (req.io) {
+          req.io.to(`user_${location.userId}`).emit('defaultLocationChanged', oldestLocation);
+        }
       }
+    }
+
+    // إرسال إشعارات الحذف
+    if (req.io) {
+      // إشعار للمستخدم
+      req.io.to(`user_${location.userId}`).emit('locationDeleted', { id });
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('userLocationDeleted', {
+        userId: location.userId,
+        locationId: id
+      });
     }
 
     const message = await translate('Location deleted successfully', { to: lang });
@@ -224,6 +286,18 @@ const setDefaultLocation = async (req, res) => {
       where: { id },
       data: { isDefault: true }
     });
+
+    // إرسال إشعارات
+    if (req.io) {
+      // إشعار للمستخدم
+      req.io.to(`user_${location.userId}`).emit('defaultLocationChanged', updatedLocation);
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('userDefaultLocationChanged', {
+        userId: location.userId,
+        location: updatedLocation
+      });
+    }
 
     const message = await translate('Default location set successfully', { to: lang });
     res.status(200).json({

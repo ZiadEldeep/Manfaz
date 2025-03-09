@@ -1,16 +1,20 @@
 const express = require('express');
-const  protect  = require('../middleware/authAdminMiddleware'); // Ensure to use your authentication middleware
+const protect = require('../middleware/authAdminMiddleware');
 const {
   getAllActivities,
   getActivitiesByEmployee,
-  getAuditLogs
-} = require('../controllers/employeeActivitiesController'); // Ensure this controller is created
+  getAuditLogs,
+  createActivityLog,
+  getSecurityAlerts
+} = require('../controllers/employeeActivitiesController');
 
 const router = express.Router();
 
 // Employee Activities Routes
-router.get('/', protect, getAllActivities); // Get all activities
-router.get('/employees/:employeeId', protect, getActivitiesByEmployee); // Get activities by employee ID
-router.get('/audit-logs', protect, getAuditLogs); // Get audit logs
+router.get('/', protect, getAllActivities);
+router.get('/employees/:employeeId', protect, getActivitiesByEmployee);
+router.get('/audit-logs', protect, getAuditLogs);
+router.post('/log', protect, createActivityLog);
+router.get('/security-alerts', protect, getSecurityAlerts);
 
 module.exports = router;

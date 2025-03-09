@@ -19,6 +19,12 @@ const getAllWorkers = async (req, res) => {
         locations: true,
       },
     } }});
+
+    // إرسال تحديث للوحة التحكم
+    if (req.io) {
+      req.io.to('admin').emit('workersUpdated', workers);
+    }
+
     const message = await translate('Workers retrieved successfully', { to: lang });
 
     if (lang === 'en') {
@@ -134,6 +140,10 @@ const createWorker = async (req, res) => {
           }
         }
       },
+      include: {
+        user: true,
+        WorkerCategory: true
+      }
     });
     // if (WorkerCategory) {
     //   await prisma.workerCategory.createMany({
@@ -143,6 +153,11 @@ const createWorker = async (req, res) => {
     //     }))
     //   })
     // }
+
+    // إرسال إشعار للوحة التحكم
+    if (req.io) {
+      req.io.to('admin').emit('newWorker', newWorker);
+    }
 
     const message = await translate('Worker created successfully', { to: lang });
     
@@ -243,7 +258,7 @@ const updateWorker = async (req, res) => {
     const { id } = req.params;
     const { title, description, skills, hourlyRate, isVerified,totalJobsDone,about,
       experiences ,
-      reviews ,userId,WorkerCategory } = req.body;
+      reviews ,userId,WorkerCategory, isAvailable } = req.body;
 
     if (!id) {
       const message = await translate('id is required', { to: lang });
@@ -338,13 +353,31 @@ const updateWorker = async (req, res) => {
         description: transDesc,
         skills: transSkills,
         hourlyRate: hourlyRate || worker.hourlyRate,
+        isAvailable: isAvailable !== undefined ? isAvailable : worker.isAvailable
       },
-      select:{
-        WorkerCategory:true
+      include: {
+        user: true,
+        WorkerCategory: true
       }
     });
 
-    
+    // إرسال إشعارات التحديث
+    if (req.io) {
+      // إشعار للعامل نفسه
+      req.io.to(`worker_${id}`).emit('profileUpdated', updatedWorker);
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('workerUpdated', updatedWorker);
+
+      // إذا تم تحديث حالة التوفر
+      if (isAvailable !== undefined) {
+        req.io.emit('workerAvailabilityChanged', {
+          workerId: id,
+          isAvailable
+        });
+      }
+    }
+
     const message = await translate('Worker updated successfully', { to: lang });
 
     if (lang === 'en') {
@@ -477,7 +510,7 @@ const createReview = async (req, res) => {
         data: null,
       });
     }
-    await prisma.review.create({
+    const review = await prisma.review.create({
       data: {
         workerId,
         rating,
@@ -485,13 +518,31 @@ const createReview = async (req, res) => {
         userId,
         orderId,
       },
+      include: {
+        user: true,
+        worker: true,
+        order: true
+      }
     });
+
+    // إرسال إشعارات التقييم
+    if (req.io) {
+      // إشعار للعامل
+      req.io.to(`worker_${workerId}`).emit('newReview', review);
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('newReview', {
+        type: 'worker',
+        review
+      });
+    }
+
     const message = await translate('Review created successfully', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: null,
+      data: review,
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
@@ -547,24 +598,41 @@ const deleteReview = async (req, res) => {
   }
 };
 
-// Update Scheduled Time
+// Update Schedule
 const updateSchedule = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { workerId } = req.params;
     const { schedule } = req.body;
-    const worker = await prisma.scheduleOrder.update({
+
+    const updatedSchedule = await prisma.scheduleOrder.update({
       where: { workerId },
       data: {
         schedule,
       },
-    })
-    const message = await translate('Scheduled time updated successfully', { to: lang });
+      include: {
+        worker: true
+      }
+    });
+
+    // إرسال إشعارات تحديث الجدول
+    if (req.io) {
+      // إشعار للعامل
+      req.io.to(`worker_${workerId}`).emit('scheduleUpdated', updatedSchedule);
+
+      // إشعار للوحة التحكم
+      req.io.to('admin').emit('workerScheduleUpdated', {
+        workerId,
+        schedule: updatedSchedule
+      });
+    }
+
+    const message = await translate('Schedule updated successfully', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
-      data: worker,
+      data: updatedSchedule,
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
