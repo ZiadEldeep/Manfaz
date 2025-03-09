@@ -532,7 +532,7 @@ const verifyAccount = async (req, res) => {
 // تجديد التوكن
 const refresh = async (req, res) => {
   const lang = req.query.lang || "en";
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.body.refreshToken;
   let message = await translate("Unauthorized", { to: lang });
   if (!refreshToken)
     return res.status(401).json({
