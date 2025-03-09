@@ -91,20 +91,24 @@ const getDashboardData = async (req, res) => {
     });
     let workers = await prisma.worker.count();
     let drivers = await prisma.deliveryDriver.count();
+
     let orders = await prisma.order.count();
-    let revenue = await prisma.order.sum({
-      where: {
-        status: "completed",
-      },
-      select: {
-        price: true,
-      },
-    });
-    revenue = revenue.price;
+
+    let revenue = await prisma.order.aggregate({
+        _sum: {
+          price: true,
+        },
+        where: {
+          status: "completed",
+        },
+      });
+    revenue = revenue._sum.price || 0;
+
+
     let stores = await prisma.store.count();
     let categories = await prisma.category.count();
     let services = await prisma.service.count();
-    let offers = await prisma.offer.count();
+    let offers = await prisma.storeOffer.count();
     let wallets = await prisma.wallet.count();
     let employees = await prisma.employee.count();
 
