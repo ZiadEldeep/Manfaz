@@ -149,10 +149,10 @@ const createOrder = async (req, res) => {
             connect: { id: user.id } // Connect the user by their ID
           },
           service:{
-            connect: { id: serviceId } // Connect the service by their ID
+            connect: { id: service.id } // Connect the service by their ID
           },
           provider:{
-            connect: { id: providerId } // Connect the provider by their ID
+            connect: { id: provider.id } // Connect the provider by their ID
           },
           totalAmount,
           notes:notesTranslated,
