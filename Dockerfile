@@ -11,4 +11,4 @@ COPY . .
 
 EXPOSE 3003
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+CMD ["sh", "-c", "npx prisma generate && npm start"]
