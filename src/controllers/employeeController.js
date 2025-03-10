@@ -159,20 +159,31 @@ const deleteEmployee = async (req, res) => {
 // Update employee permissions
 const updateEmployeePermissions = async (req, res) => {
   const { id } = req.params;
-  const { permissions } = req.body;
-  let id2=id
+  const { permissions:{id:id2,...permissions} } = req.body;
+  
   try {
-    let {id,...permissions2} = permissions;
-    const updatedEmployee = await prisma.employee.update({
-      where: { id:id2 },
-      data: {
-        permissions: {
-          update: {
-            where: { id },
-            data: { ...permissions2 },
+    const keys = Object.keys(permissions);
+    const BATCH_SIZE = 10; // تحديد حجم الدفعة
+
+    for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+      const batch = {};
+      const currentBatchKeys = keys.slice(i, i + BATCH_SIZE);
+      
+      currentBatchKeys.forEach(key => {
+        batch[key] = permissions[key]; // إعداد الدفعة للتحديث
+      });
+    }
+      // تنفيذ التحديث للدفعة الحالية
+      await prisma.employee.update({
+        where: { id: id },
+        data: {
+          permissions: {
+            update: {
+              where: { id:id2 }, // هنا يجب التأكد من تحديد الأذونات الصحيحة
+              data: { ...batch },
+            },
           },
         },
-      },
       include: {
         permissions: true
       }
@@ -192,7 +203,7 @@ const updateEmployeePermissions = async (req, res) => {
       });
     }
 
-    res.json({ success: true, data: updatedEmployee });
+    res.json({ success: true, message: 'تم تحديث الأذونات بنجاح' ,data: updatedEmployee });
   } catch (error) {
     res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
   }

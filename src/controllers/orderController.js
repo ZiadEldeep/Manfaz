@@ -145,8 +145,12 @@ const createOrder = async (req, res) => {
           user: {
             connect: { id: user.id }
           },
-          serviceId,
-          providerId,
+          service:{
+            connect: { id: service.id } // Connect the service by their ID
+          },
+          provider:{
+            connect: { id: provider.id } // Connect the provider by their ID
+          },
           totalAmount,
           notes: notesTranslated,
           imageUrl,
@@ -198,13 +202,15 @@ const createOrder = async (req, res) => {
           duration,
           ...createOrderData,
           paymentMethod,
-          store: {
-            create: store.map((store) => ({
-              storeId: store.storeId,
-              products: {
-                create: store.products.map((product) => ({
-                  productId: product.productId,
-                  quantity: product.quantity
+          store:{
+            create:store.map((store)=>({
+              store:{
+                connect: { id: store.storeId } // Connect the store by their ID
+              },
+              products:{
+                create:store.products.map((product)=>({
+                  productId:product.productId,
+                  quantity:product.quantity
                 }))
               }
             }))
