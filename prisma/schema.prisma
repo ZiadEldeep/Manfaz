@@ -102,7 +102,6 @@ model Service {
   updatedAt   DateTime   @updatedAt 
 
   parameters  ServiceParameter[]
-  Order Order[]
 }
 
 model ServiceParameter {
@@ -129,6 +128,8 @@ model ServiceParameter {
   whatIncluded Json?    // ما تشتمل عليه الخدمة
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  Order Order[]
 }
 
 model Worker {
@@ -265,7 +266,7 @@ model Order {
   userId       String?    @db.ObjectId
   user         User?      @relation(fields: [userId], references: [id])
   serviceId    String?    @db.ObjectId
-  service      Service?   @relation(fields: [serviceId], references: [id])
+  service      ServiceParameter?   @relation(fields: [serviceId], references: [id])
   providerId   String?    @db.ObjectId // العامل أو السائق
   provider     Worker?    @relation(fields: [providerId], references: [id])
   deliveryDriverId String? @db.ObjectId // السائق
