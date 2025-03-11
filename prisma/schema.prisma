@@ -271,8 +271,9 @@ model Order {
   provider     Worker?    @relation(fields: [providerId], references: [id])
   deliveryDriverId String? @db.ObjectId // السائق
   deliveryDriver DeliveryDriver? @relation(fields: [deliveryDriverId], references: [id])
-  locationId   String? @db.ObjectId
-  location     UserLocation? @relation(fields: [locationId], references: [id])
+  latitude Float?
+  longitude Float?
+  address String?
   notes        String?
   price        Float?
   duration     Int?
@@ -553,7 +554,6 @@ model UserLocation {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  Order Order[]
 }
 
 model StoreWorkingHours {

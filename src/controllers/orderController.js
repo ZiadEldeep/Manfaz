@@ -37,7 +37,6 @@ const getAllOrders = async (req, res) => {
         deliveryDriver: true,
         store: true,
         user: true,
-        location: true
       },
       skip,
       take: +limit
@@ -45,8 +44,8 @@ const getAllOrders = async (req, res) => {
 
     const message = await translate('Orders retrieved successfully', { to: lang });
 
-    const totalOrders = await prisma.order.count({ 
-      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition } 
+    const totalOrders = await prisma.order.count({
+      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition }
     });
     const totalPages = Math.ceil(totalOrders / limit);
 
@@ -90,7 +89,9 @@ const createOrder = async (req, res) => {
       type,
       notes,
       imageUrl,
-      locationId,
+      latitude,
+      longitude,
+      address,
       price,
       duration,
       paymentMethod,
@@ -112,13 +113,6 @@ const createOrder = async (req, res) => {
     });
     if (!user) {
       const message = await translate('User not found', { to: lang });
-      return res.status(404).json({ status: false, message, code: 404, data: null });
-    }
-    const location = await prisma.userLocation.findUnique({
-      where: { id: locationId }
-    });
-    if (!location) {
-      const message = await translate('User Location not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
 
@@ -145,18 +139,18 @@ const createOrder = async (req, res) => {
           user: {
             connect: { id: user.id }
           },
-          service:{
+          service: {
             connect: { id: service.id } // Connect the service by their ID
           },
-          provider:{
+          provider: {
             connect: { id: provider.id } // Connect the provider by their ID
           },
           totalAmount,
           notes: notesTranslated,
           imageUrl,
-          location: {
-            connect: { id: location.id }
-          },
+          latitude,
+          longitude,
+          address,
           price,
           duration,
           ...createOrderData,
@@ -166,7 +160,6 @@ const createOrder = async (req, res) => {
           user: true,
           service: true,
           provider: true,
-          location: true
         }
       });
 
@@ -195,22 +188,20 @@ const createOrder = async (req, res) => {
           totalAmount,
           notes: notesTranslated,
           imageUrl,
-          location: {
-            connect: { id: location.id }
-          },
+
           price,
           duration,
           ...createOrderData,
           paymentMethod,
-          store:{
-            create:store.map((store)=>({
-              store:{
+          store: {
+            create: store.map((store) => ({
+              store: {
                 connect: { id: store.storeId } // Connect the store by their ID
               },
-              products:{
-                create:store.products.map((product)=>({
-                  productId:product.productId,
-                  quantity:product.quantity
+              products: {
+                create: store.products.map((product) => ({
+                  productId: product.productId,
+                  quantity: product.quantity
                 }))
               }
             }))
@@ -228,7 +219,6 @@ const createOrder = async (req, res) => {
               }
             }
           },
-          location: true
         }
       });
 
@@ -275,7 +265,6 @@ const getOrderById = async (req, res) => {
         service: true,
         provider: true,
         store: true,
-        location: true
       }
     });
 
