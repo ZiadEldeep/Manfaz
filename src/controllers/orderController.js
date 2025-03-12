@@ -188,7 +188,9 @@ const createOrder = async (req, res) => {
           totalAmount,
           notes: notesTranslated,
           imageUrl,
-
+          latitude,
+          longitude,
+          address,
           price,
           duration,
           ...createOrderData,
