@@ -358,7 +358,13 @@ const getStoreById = async (req, res) => {
         products: true,
         offers: true,
         locations: true,
-        workingHours: true
+        workingHours: true,
+        Coupon: true,
+        category: true,
+        Discount: true,
+        GiftCard: true,
+        Reward: true,
+        OrdersStore: true
       }
     });
 
