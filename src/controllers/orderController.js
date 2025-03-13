@@ -44,7 +44,17 @@ const getAllOrders = async (req, res) => {
             }
           }
         },
-        deliveryDriver: true,
+        deliveryDriver: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true
+              }
+            }
+          }
+        },
         store: true,
         user: true,
       },
