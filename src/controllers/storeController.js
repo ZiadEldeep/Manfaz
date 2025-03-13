@@ -222,8 +222,8 @@ const createStoreProduct = async (req, res) => {
     ]);
 
     // ترجمة المكونات
-    const translatedIngredients = ingredients ? 
-      await Promise.all(ingredients.map(ingredient => translate(ingredient, { to: 'en' }))) : 
+    const translatedIngredients = ingredients ?
+      await Promise.all(ingredients.map(ingredient => translate(ingredient, { to: 'en' }))) :
       [];
 
     // ترجمة الإضافات
@@ -318,12 +318,12 @@ const createStoreOffer = async (req, res) => {
       const message = await translate('Name, type and discount are required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateDescription,translateType] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"}),translate(type,{to:"en"})]);
+    let [translateName, translateDescription, translateType] = await Promise.all([translate(name, { to: "en" }), translate(description, { to: "en" }), translate(type, { to: "en" })]);
     const offer = await prisma.storeOffer.create({
       data: {
-        name:translateName,
-        description:translateDescription,
-        type:translateType,
+        name: translateName,
+        description: translateDescription,
+        type: translateType,
         image,
         startDate,
         endDate,
@@ -350,7 +350,7 @@ const getStoreById = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-    
+
     const store = await prisma.store.findUnique({
       where: { id },
       include: {
@@ -365,29 +365,33 @@ const getStoreById = async (req, res) => {
       const message = await translate('Store not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
-    let [translatedStore,message] = await Promise.all([
-     Promise.all(store.map(async (store) => {
-        let [translatedName, translatedDescription, translatedType, translatedAddress] = await Promise.all([
-          translate(store.name, { to: lang }),
-          translate(store.description, { to: lang }),
-          translate(store.type, { to: lang }),
-          translate(store.address, { to: lang })
-        ]);
-      return {
+    if (lang === "en") {
+      return res.status(200).json({
+        status: true,
+        message,
+        code: 200,
+        data: store
+      })
+    }
+    let [translatedName, translatedDescription, translatedType, translatedAddress, message] = await Promise.all([
+      translate(store.name, { to: lang }),
+      translate(store.description, { to: lang }),
+      translate(store.type, { to: lang }),
+      translate(store.address, { to: lang }),
+      translate('Store retrieved successfully', { to: lang })
+    ]);
+
+    return res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
         ...store,
         name: translatedName,
         description: translatedDescription,
         type: translatedType,
         address: translatedAddress
-      };
-     })),
-      translate('Store retrieved successfully', { to: lang })
-    ]);
-    res.status(200).json({
-      status: true,
-      message,
-      code: 200,
-      data: translatedStore
+      }
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
@@ -401,15 +405,15 @@ const updateStore = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    let [translateName,translateDescription,translateType,translateAddress] = await Promise.all([translate(updateData.name,{to:"en"}),translate(updateData.description,{to:"en"}),translate(updateData.type,{to:"en"}),translate(updateData.address,{to:"en"})]);
+    let [translateName, translateDescription, translateType, translateAddress] = await Promise.all([translate(updateData.name, { to: "en" }), translate(updateData.description, { to: "en" }), translate(updateData.type, { to: "en" }), translate(updateData.address, { to: "en" })]);
     const store = await prisma.store.update({
       where: { id },
       data: {
         ...updateData,
-        name:translateName,
-        description:translateDescription,
-        type:translateType,
-        address:translateAddress,    
+        name: translateName,
+        description: translateDescription,
+        type: translateType,
+        address: translateAddress,
       }
     });
 
@@ -461,7 +465,7 @@ const getStoreCategories = async (req, res) => {
         products: true
       }
     });
-    let [translatedCategories,message] = await Promise.all([
+    let [translatedCategories, message] = await Promise.all([
       Promise.all(categories.map(async (category) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(category.name, { to: lang }),
@@ -494,13 +498,13 @@ const getAllStoreCategories = async (req, res) => {
   let search = req.query.search || '';
   try {
     let searchTranslated = search ? await translate(search, { to: lang }) : '';
-    let searchQuery = search ? {OR:[{name:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{description:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}}]} : {};
+    let searchQuery = search ? { OR: [{ name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }, { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }] } : {};
     const categories = await prisma.storeCategory.findMany({
-      where:searchQuery,
+      where: searchQuery,
       skip: offset,
       take: +limit
     });
-    let [translatedCategories,message] = await Promise.all([
+    let [translatedCategories, message] = await Promise.all([
       Promise.all(categories.map(async (category) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(category.name, { to: lang }),
@@ -537,11 +541,11 @@ const createStoreCategory = async (req, res) => {
       const message = await translate('Category name is required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateDescription] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(name, { to: "en" }), translate(description, { to: "en" })]);
     const category = await prisma.storeCategory.create({
       data: {
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         image,
         sortOrder,
         storeId
@@ -590,7 +594,7 @@ const getStoreProducts = async (req, res) => {
       skip: offset,
       take: +limit
     });
-    let [translatedProducts,message] = await Promise.all([
+    let [translatedProducts, message] = await Promise.all([
       Promise.all(products.map(async (product) => {
         let [translatedName, translatedDescription, translatedIngredients, translatedSizes, translatedAdditions] = await Promise.all([
           translate(product.name, { to: lang }),
@@ -606,7 +610,7 @@ const getStoreProducts = async (req, res) => {
           ingredients: translatedIngredients,
           extras: {
             sizes: translatedSizes,
-            additions: translatedAdditions 
+            additions: translatedAdditions
           }
         };
       })),
@@ -638,12 +642,12 @@ const getStoreOffers = async (req, res) => {
     };
 
     const offers = await prisma.storeOffer.findMany({ where });
-    let [translatedOffers,message] = await Promise.all([
+    let [translatedOffers, message] = await Promise.all([
       Promise.all(offers.map(async (offer) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(offer.name, { to: lang }),
           translate(offer.description, { to: lang })
-        ]); 
+        ]);
         return {
           ...offer,
           name: translatedName,
@@ -673,12 +677,12 @@ const getStoreLocations = async (req, res) => {
     const locations = await prisma.storeLocation.findMany({
       where: { storeId }
     });
-    let [translatedLocations,message] = await Promise.all([
+    let [translatedLocations, message] = await Promise.all([
       Promise.all(locations.map(async (location) => {
         let [translatedName, translatedAddress] = await Promise.all([
           translate(location.name, { to: lang }),
           translate(location.address, { to: lang })
-        ]); 
+        ]);
         return {
           ...location,
           name: translatedName,
@@ -710,11 +714,11 @@ const createStoreLocation = async (req, res) => {
       const message = await translate('Location name and address are required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateAddress] = await Promise.all([translate(name,{to:"en"}),translate(address,{to:"en"})]);
+    let [translateName, translateAddress] = await Promise.all([translate(name, { to: "en" }), translate(address, { to: "en" })]);
     const location = await prisma.storeLocation.create({
       data: {
-        name:translateName,
-        address:translateAddress,
+        name: translateName,
+        address: translateAddress,
         latitude,
         longitude,
         phone,
@@ -741,7 +745,7 @@ const getStoreDiscounts = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { storeId } = req.params;
-    
+
     const discounts = await prisma.discount.findMany({
       where: {
         storeId,
@@ -750,12 +754,12 @@ const getStoreDiscounts = async (req, res) => {
         endDate: { gte: new Date() }
       }
     });
-    let [translatedDiscounts,message] = await Promise.all([
+    let [translatedDiscounts, message] = await Promise.all([
       Promise.all(discounts.map(async (discount) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(discount.name, { to: lang }),
           translate(discount.description, { to: lang })
-        ]); 
+        ]);
         return {
           ...discount,
           name: translatedName,
@@ -798,12 +802,12 @@ const createDiscount = async (req, res) => {
       const message = await translate('Missing required fields', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateDescription] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(name, { to: "en" }), translate(description, { to: "en" })]);
     const discount = await prisma.discount.create({
       data: {
         storeId,
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         type,
         value,
         startDate: new Date(startDate),
@@ -831,17 +835,17 @@ const createDiscount = async (req, res) => {
 const updateDiscount = async (req, res) => {
   const { storeId, id } = req.params;
   const { lang = 'en' } = req.query;
-  
+
   try {
-    let [translateName,translateDescription] = await Promise.all([translate(req.body.name,{to:"en"}),translate(req.body.description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(req.body.name, { to: "en" }), translate(req.body.description, { to: "en" })]);
     const discount = await prisma.discount.update({
       where: {
         id: parseInt(id),
         storeId: parseInt(storeId)
       },
       data: {
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         type: req.body.type,
         value: req.body.value,
         startDate: new Date(req.body.startDate),
@@ -902,7 +906,7 @@ const getStoreCoupons = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { storeId } = req.params;
-    
+
     const coupons = await prisma.coupon.findMany({
       where: {
         storeId,
@@ -911,7 +915,7 @@ const getStoreCoupons = async (req, res) => {
         endDate: { gte: new Date() }
       }
     });
-    let [translatedCoupons,message] = await Promise.all([
+    let [translatedCoupons, message] = await Promise.all([
       Promise.all(coupons.map(async (coupon) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(coupon.name, { to: lang }),
@@ -961,7 +965,7 @@ const createCoupon = async (req, res) => {
       const message = await translate('Missing required fields', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateDescription] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(name, { to: "en" }), translate(description, { to: "en" })]);
     // التحقق من عدم وجود كوبون بنفس الكود
     const existingCoupon = await prisma.coupon.findUnique({
       where: { code }
@@ -976,8 +980,8 @@ const createCoupon = async (req, res) => {
       data: {
         storeId,
         code,
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         type,
         value,
         startDate: new Date(startDate),
@@ -1038,7 +1042,7 @@ const validateCoupon = async (req, res) => {
     }
 
     // حساب قيمة الخصم
-    let discountAmount = coupon.type === 'PERCENTAGE' 
+    let discountAmount = coupon.type === 'PERCENTAGE'
       ? (orderAmount * coupon.value / 100)
       : coupon.value;
 
@@ -1081,9 +1085,9 @@ const validateCoupon = async (req, res) => {
 const updateCoupon = async (req, res) => {
   const { storeId, id } = req.params;
   const { lang = 'en' } = req.query;
-  
+
   try {
-    let [translateName,translateDescription] = await Promise.all([translate(req.body.name,{to:"en"}),translate(req.body.description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(req.body.name, { to: "en" }), translate(req.body.description, { to: "en" })]);
     const coupon = await prisma.coupon.update({
       where: {
         id: parseInt(id),
@@ -1091,8 +1095,8 @@ const updateCoupon = async (req, res) => {
       },
       data: {
         code: req.body.code,
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         type: req.body.type,
         value: req.body.value,
         maxUses: req.body.maxUses,
@@ -1133,7 +1137,7 @@ const deleteCoupon = async (req, res) => {
 
     const message = await translate('Coupon deleted successfully', { to: lang });
     res.status(200).json({
-      status: true, 
+      status: true,
       message,
       code: 200,
       data: null
