@@ -33,7 +33,17 @@ const getAllOrders = async (req, res) => {
       where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition },
       include: {
         service: true,
-        provider: true,
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true
+              }
+            }
+          }
+        },
         deliveryDriver: true,
         store: true,
         user: true,
