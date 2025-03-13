@@ -357,7 +357,8 @@ const getStoreById = async (req, res) => {
         categories: true,
         products: true,
         offers: true,
-        locations: true
+        locations: true,
+        workingHours: true
       }
     });
 
