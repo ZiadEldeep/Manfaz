@@ -375,7 +375,7 @@ const getStoreById = async (req, res) => {
     if (lang === "en") {
       return res.status(200).json({
         status: true,
-        message,
+        message: 'Store retrieved successfully',
         code: 200,
         data: store
       })
