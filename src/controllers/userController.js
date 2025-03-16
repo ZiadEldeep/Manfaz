@@ -78,7 +78,7 @@ const getUserById = async (req, res) => {
             data: null,
           });
         }
-    let totalEarnings = await prisma.earnings.count({
+    let totalEarnings = await prisma.earning.count({
       where:{
         workerId: user.Worker[0].id
       },
