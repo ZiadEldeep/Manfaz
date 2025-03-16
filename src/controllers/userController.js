@@ -88,7 +88,7 @@ const getUserById = async (req, res) => {
         });
     let totalOrders = await prisma.order.count({
       where:role==="worker"?{
-        workerId: user.Worker[0].id
+        providerId: user.Worker[0].id
       }:role==="user"?{
         userId: id
       }:null
