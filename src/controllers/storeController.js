@@ -296,7 +296,137 @@ const createStoreProduct = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
+const getStoreProductById=async (req,res)=>{
+  const lang = req.query.lang || 'ar';
+  try {
+    const { id } = req.params;
+    const product = await prisma.product.findUnique({
+      where: {
+        id
+      },
+      include: {
+        category: true,
+        store: true
+      }
+    });
+    if (!product) {
+      const message = await translate('Product not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+    if(lang==="en"){
+      return res.status(200).json({
+        status: true,
+        message: 'Product found successfully',
+        code: 200,
+        data: product
+      });
+    }
+    // ترجمة البيانات
+    const [translatedName, translatedDescription] = await Promise.all([
+      translate(product.name, { to: lang }),
+      product.description ? translate(product.description, { to: lang }) : null
+    ]);
 
+    // ترجمة المكونات
+    const translatedIngredients = product.ingredients ?
+      await Promise.all(product.ingredients.map(ingredient => translate(ingredient, { to: lang }))) :
+      [];
+
+    // ترجمة الإضافات
+    if (product.extras) {
+      if (product.extras.sizes) {
+        product.extras.sizes = await Promise.all(
+          product.extras.sizes.map(size => translate(size, { to: lang }))
+        );
+      }
+      if (product.extras.additions) {
+        product.extras.additions = await Promise.all(
+          product.extras.additions.map(async addition => ({
+            name: await translate(addition.name, { to: lang }),
+            price: addition.price
+          }))
+        );
+      }
+    }
+    const message = await translate('Product retrieved successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
+        ...product,
+        name: translatedName,
+        description: translatedDescription,
+        ingredients: translatedIngredients,
+        extras: product.extras
+      }
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+}
+// تعديل منتج في المتجر
+const updateStoreProduct = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { storeId, id } = req.params;
+    const {
+      name,
+      description,
+      type,
+      image,
+      startDate,
+      endDate,
+      discount,
+      applicableProducts
+    } = req.body;
+    // التحقق من البيانات المطلوبة  
+    const product = await prisma.product.findUnique({
+      where: {
+        id
+      }
+    });
+    if (!product) {
+      const message = await translate('Product not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+    const store = await prisma.store.findUnique({
+      where: {
+        id: storeId
+      }
+    });
+    if (!store) {
+      const message = await translate('Store not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+    const updatedProduct = await prisma.product.update({
+      where: {
+        id
+      },
+      data: {
+        name,
+        description,
+        type,
+        image,
+        startDate,
+        endDate,
+        discount,
+        applicableProducts
+      }
+    });
+    const message = await translate('Product updated successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: updatedProduct
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
 // إضافة عرض جديد للمتجر
 const createStoreOffer = async (req, res) => {
   const lang = req.query.lang || 'ar';
@@ -1170,6 +1300,8 @@ module.exports = {
   createStoreCategory,
   getStoreProducts,
   createStoreProduct,
+  getStoreProductById,
+  updateStoreProduct,
   getStoreOffers,
   createStoreOffer,
   getStoreLocations,

@@ -11,6 +11,7 @@ const {
   createStoreCategory,
   getStoreProducts,
   createStoreProduct,
+  getStoreProductById,
   getStoreOffers,
   createStoreOffer,
   getStoreLocations,
@@ -23,7 +24,8 @@ const {
   createCoupon,
   updateCoupon,
   deleteCoupon,
-  validateCoupon
+  validateCoupon,
+  updateStoreProduct
 } = require('../controllers/storeController');
 
 const router = express.Router();
@@ -44,6 +46,8 @@ router.post('/:storeId/categories', createStoreCategory);
 // منتجات المتجر
 router.get('/:storeId/products', getStoreProducts);
 router.post('/:storeId/products', protect, createStoreProduct);
+router.get('/:storeId/products/:id', getStoreProductById);
+router.put('/:storeId/products/:id', updateStoreProduct);
 
 // عروض المتجر
 router.get('/:storeId/offers', getStoreOffers);
