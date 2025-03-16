@@ -443,7 +443,27 @@ const deleteWorker = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
-
+let updateAvailability = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  try {
+    const { id } = req.params;
+    const { isAvailable } = req.body;
+    const worker = await prisma.worker.update({
+      where: { userId: id },
+      data: { isAvailable },
+    });
+    const message = await translate('Availability updated successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: worker
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+}
 // Get All Reviews
 const getAllReviews = async (req, res) => {
   const lang = req.query.lang || 'en';
@@ -640,4 +660,4 @@ const updateSchedule = async (req, res) => {
   }
 };
 
-module.exports = { getAllWorkers, createWorker, getWorkerById, updateWorker, deleteWorker, getAllReviews, createReview, updateReview, deleteReview, updateSchedule };
+module.exports = { getAllWorkers, createWorker, getWorkerById, updateWorker, deleteWorker, getAllReviews, createReview, updateReview, deleteReview, updateSchedule, updateAvailability };
