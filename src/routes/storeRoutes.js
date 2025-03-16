@@ -46,7 +46,7 @@ router.post('/:storeId/categories', createStoreCategory);
 // منتجات المتجر
 router.get('/:storeId/products', getStoreProducts);
 router.post('/:storeId/products', protect, createStoreProduct);
-router.get('/:storeId/products/:id', getStoreProductById);
+router.get('/products/:id', getStoreProductById);
 router.put('/:storeId/products/:id', updateStoreProduct);
 
 // عروض المتجر
