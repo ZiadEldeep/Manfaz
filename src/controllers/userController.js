@@ -58,6 +58,18 @@ const getUserById = async (req, res) => {
         }
       }
     });
+    let totalOrders = await prisma.order.count({
+      where:role==="worker"?{
+        workerId: user.Worker[0].id
+      }:role==="user"?{
+        userId: id
+      }:null
+    });
+    let totalReviews =role==="worker"? await prisma.review.count({
+      where:{
+        workerId: user.Worker[0].id
+      }
+    }):0;
 
     if (!user) {
       const message = await translate('User not found', { to: lang });
@@ -76,21 +88,22 @@ const getUserById = async (req, res) => {
         status: true,
         message,
         code: 200,
-        data: user
+        data: {...user,
+          totalOrders,
+          totalReviews
+        }
       });
       return;
     }
-
-    // ترجمة اسم المستخدم للغة المطلوبة
-    const translatedName = await translate(user.name, { to: lang });
-
+    let workerTranslated = await translate(user.Worker[0].title, { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
       data: {
-        ...user,
-        name: translatedName
+        ...{...user,Worker:[...user.Worker,{...user.Worker[0],title:workerTranslated}]},
+        totalOrders,
+        totalReviews
       }
     });
   } catch (error) {

@@ -156,9 +156,19 @@ model Worker {
   reviews         Review[]
   Order Order[]
   schedule Schedule[]
-
+  earnings Earning[]
   WorkerCategory WorkerCategory[]
 }
+
+model Earning {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  amount      Float     // القيمة بالدولار
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  worker      Worker    @relation(fields: [workerId], references: [id])
+  workerId    String    @db.ObjectId
+}
+
 enum StatusEnum {
   SCHEDULED
   IN_PROGRESS
