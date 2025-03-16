@@ -46,7 +46,16 @@ const getUserById = async (req, res) => {
       where: { id },
       include: {
         locations: true,
-        worker:role==="worker"
+        worker:role==="worker"&&{
+          include:{
+            Order:{
+              take:5
+            },
+            reviews:{
+              take:5
+            }
+          }
+        }
       }
     });
 
