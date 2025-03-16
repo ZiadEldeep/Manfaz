@@ -448,10 +448,33 @@ let updateAvailability = async (req, res) => {
   try {
     const { id } = req.params;
     const { isAvailable } = req.body;
+
+    // تحقق من وجود العامل
+    const workerExists = await prisma.worker.findUnique({
+      where: { id }
+    });
+
+    if (!workerExists) {
+      const message = await translate('Worker not found', { to: lang });
+      return res.status(404).json({
+        status: false,
+        message,
+        code: 404,
+        data: null,
+      });
+    }
+
     const worker = await prisma.worker.update({
       where: { id },
       data: { isAvailable },
     });
+
+    // إرسال إشعارات التحديث
+    if (req.io) {
+      req.io.to(`worker_${id}`).emit('availabilityUpdated', worker);
+      req.io.to('admin').emit('workerUpdated', worker);
+    }
+
     const message = await translate('Availability updated successfully', { to: lang });
     res.status(200).json({
       status: true,
@@ -463,7 +486,7 @@ let updateAvailability = async (req, res) => {
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
-}
+};
 // Get All Reviews
 const getAllReviews = async (req, res) => {
   const lang = req.query.lang || 'en';
