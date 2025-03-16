@@ -449,7 +449,7 @@ let updateAvailability = async (req, res) => {
     const { id } = req.params;
     const { isAvailable } = req.body;
     const worker = await prisma.worker.update({
-      where: { userId: id },
+      where: { id },
       data: { isAvailable },
     });
     const message = await translate('Availability updated successfully', { to: lang });
