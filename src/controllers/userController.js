@@ -40,6 +40,9 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   const lang = req.query.lang || 'en';
   const role = req.query.role || 'user';
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);   
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
@@ -53,11 +56,36 @@ const getUserById = async (req, res) => {
             },
             reviews:{
               take:5
+            },
+            earnings:{
+              where:{
+                createdAt:{
+                  gte:startOfMonth
+                }
+              }
             }
           }
         }
       }
     });
+    
+        if (!user) {
+          const message = await translate('User not found', { to: lang });
+          return res.status(404).json({
+            status: false,
+            message,
+            code: 404,
+            data: null,
+          });
+        }
+    let totalEarnings = await prisma.earnings.count({
+      where:{
+        workerId: user.Worker[0].id
+      },
+      ـsum:{
+        amount:true
+      }
+    })
     let totalOrders = await prisma.order.count({
       where:role==="worker"?{
         workerId: user.Worker[0].id
@@ -71,16 +99,6 @@ const getUserById = async (req, res) => {
       }
     }):0;
 
-    if (!user) {
-      const message = await translate('User not found', { to: lang });
-      return res.status(404).json({
-        status: false,
-        message,
-        code: 404,
-        data: null,
-      });
-    }
-
     const message = await translate('User retrieved successfully', { to: lang });
 
     if (lang === 'en') {
@@ -90,7 +108,8 @@ const getUserById = async (req, res) => {
         code: 200,
         data: {...user,
           totalOrders,
-          totalReviews
+          totalReviews,
+          totalEarnings
         }
       });
       return;
@@ -103,7 +122,8 @@ const getUserById = async (req, res) => {
       data: {
         ...{...user,Worker:[...user.Worker,{...user.Worker[0],title:workerTranslated}]},
         totalOrders,
-        totalReviews
+        totalReviews,
+        totalEarnings
       }
     });
   } catch (error) {
