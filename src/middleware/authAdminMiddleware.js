@@ -83,7 +83,7 @@ const protect = async (req, res, next) => {
     const message = await translate('Not authorized, token failed', { to: lang });
     res.status(401).json({
       status: false,
-      message:message + error,
+      message:message +" "+ error,
       code: 401,
       data: null
     });

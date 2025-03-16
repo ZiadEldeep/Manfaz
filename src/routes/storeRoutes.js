@@ -32,7 +32,7 @@ const router = express.Router();
 // stores
 router.get('/', getAllStores);
 router.get('/:id', getStoreById);
-router.post('/', protect, createStore);
+router.post('/', createStore);
 router.put('/:id', updateStore);
 router.delete('/:id', deleteStore);
 
