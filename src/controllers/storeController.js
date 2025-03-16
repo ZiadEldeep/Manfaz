@@ -206,7 +206,8 @@ const createStoreProduct = async (req, res) => {
       categoryId,
       ingredients,
       extras,
-      stock
+      stock,
+      rating
     } = req.body;
 
     // التحقق من البيانات المطلوبة
@@ -253,6 +254,7 @@ const createStoreProduct = async (req, res) => {
         images,
         storeId,
         categoryId,
+        rating: rating || 3.0,
         ingredients: translatedIngredients,
         extras: translatedExtras,
         stock: stock || 0,
@@ -379,6 +381,7 @@ const updateStoreProduct = async (req, res) => {
       startDate,
       endDate,
       discount,
+      rating,
       applicableProducts
     } = req.body;
     // التحقق من البيانات المطلوبة  
@@ -412,7 +415,8 @@ const updateStoreProduct = async (req, res) => {
         startDate,
         endDate,
         discount,
-        applicableProducts
+        applicableProducts,
+        rating
       }
     });
     const message = await translate('Product updated successfully', { to: lang });

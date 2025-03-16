@@ -439,6 +439,7 @@ model Product {
   categoryId  String     @db.ObjectId
   category    StoreCategory @relation(fields: [categoryId], references: [id])
   isAvailable Boolean    @default(true)
+  rating      Float      @default(3.0)
   ingredients String[]   // المكونات
   extras      Json?      // إضافات اختيارية (مثل: حجم إضافي، إضافات خاصة)
   stock       Int        @default(0)        // الكمية المتوفرة
