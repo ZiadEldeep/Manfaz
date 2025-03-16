@@ -39,12 +39,14 @@ const getAllUsers = async (req, res) => {
 // Get User By ID
 const getUserById = async (req, res) => {
   const lang = req.query.lang || 'en';
+  const role = req.query.role || 'user';
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
-        location: true,
+        locations: true,
+        worker:role==="worker"
       }
     });
 
