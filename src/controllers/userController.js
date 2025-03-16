@@ -109,7 +109,7 @@ const getUserById = async (req, res) => {
         data: {...user,
           totalOrders,
           totalReviews,
-          totalEarnings
+          totalEarnings:totalEarnings._sum.amount || 0
         }
       });
       return;
@@ -123,7 +123,7 @@ const getUserById = async (req, res) => {
         ...{...user,Worker:[...user.Worker,{...user.Worker[0],title:workerTranslated}]},
         totalOrders,
         totalReviews,
-        totalEarnings
+        totalEarnings:totalEarnings._sum.amount || 0
       }
     });
   } catch (error) {
