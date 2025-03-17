@@ -55,7 +55,17 @@ const getAllOrders = async (req, res) => {
             }
           }
         },
-        store: true,
+        store: {
+          include: {
+            store:{
+              select:{
+                id:true,
+                name:true,
+                logo:true
+              }
+            }
+          }
+        },
         user: true,
       },
       skip,
