@@ -10,17 +10,21 @@ const getAllStores = async (req, res) => {
   let offset = (page - 1) * limit;
   let search = req.query.search || '';
   let categoryId = req.query.categoryId || '';
+  let filter = req.query.filter || '';
 
   try {
     let searchTranslated = search ? await translate(search, { to: 'en' }) : '';
-    let searchQuery = search ? {
+    let searchQuery = search ? {AND: [{
       OR: [
         { name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
         { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
         { type: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
         { address: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }
-      ]
-    } : {};
+      ]},
+      filter.length > 0?{categories:{
+  some:{id:filter}
+}}:{}
+   ] } : {};
 
     const [stores, totalStores] = await Promise.all([
       prisma.store.findMany({
