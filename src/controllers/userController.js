@@ -78,24 +78,24 @@ const getUserById = async (req, res) => {
             data: null,
           });
         }
-        let totalEarnings = await prisma.earning.aggregate({
+        let totalEarnings =role==="worker"? await prisma.earning.aggregate({
           _sum: {
             amount: true,
           },
           where: {
-            workerId: user.Worker[0].id,
+            workerId: user.Worker?.[0]?.id,
           },
-        });
+        }):null;
     let totalOrders = await prisma.order.count({
       where:role==="worker"?{
-        providerId: user.Worker[0].id
+        providerId: user.Worker?.[0]?.id
       }:role==="user"?{
         userId: id
       }:null
     });
     let totalReviews =role==="worker"? await prisma.review.count({
       where:{
-        workerId: user.Worker[0].id
+        workerId: user.Worker?.[0]?.id
       }
     }):0;
 
@@ -109,24 +109,25 @@ const getUserById = async (req, res) => {
         data: {...user,
           totalOrders,
           totalReviews,
-          totalEarnings:totalEarnings._sum.amount || 0
+          totalEarnings:totalEarnings?._sum?.amount || 0
         }
       });
       return;
     }
-    let workerTranslated = await translate(user.Worker[0].title, { to: lang });
+    let workerTranslated = await translate(user.Worker?.[0]?.title||'', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
       data: {
-        ...{...user,Worker:[...user.Worker,{...user.Worker[0],title:workerTranslated}]},
+        ...{...user,Worker:role==="worker"?[...user.Worker,{...user.Worker?.[0],title:workerTranslated}]:[]},
         totalOrders,
         totalReviews,
-        totalEarnings:totalEarnings._sum.amount || 0
+        totalEarnings:totalEarnings?._sum?.amount || 0
       }
     });
   } catch (error) {
+    console.log(error);
     const message = await translate(error.message, { to: lang });
     res.status(500).json({
       status: false,
