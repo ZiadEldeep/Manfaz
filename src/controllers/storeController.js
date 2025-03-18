@@ -24,7 +24,9 @@ const getAllStores = async (req, res) => {
       filter.length > 0?{categories:{
   some:{id:filter}
 }}:{}
-   ] } : {};
+   ] } : filter.length > 0?{categories:{
+    some:{id:filter}
+  }}:{};
 
     const [stores, totalStores] = await Promise.all([
       prisma.store.findMany({
