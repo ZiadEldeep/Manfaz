@@ -34,11 +34,7 @@ const getAllCategories = async (req, res) => {
         include: {
           services: true,
           Store: true,
-          WorkerCategory: {
-            include: {
-              worker: true
-            }
-          }
+          // WorkerCategory: true
         }
       }),
       prisma.category.count({ where })
