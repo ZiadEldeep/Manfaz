@@ -14,13 +14,13 @@ const {
 const router = express.Router();
 
 // موجه الموظفين
-router.get('/', protect, getAllEmployees);
-router.get('/:id', protect, getEmployeeById);
-router.post('/', protect, createEmployee);
-router.put('/:id', protect, updateEmployee);
-router.delete('/:id', protect, deleteEmployee);
-router.put('/:id/permissions', protect, updateEmployeePermissions);
-router.put('/:id/role', protect, updateEmployeeRole);
-router.put('/:id/toggle-active', protect, toggleEmployeeActive);
+router.get('/', getAllEmployees);
+router.get('/:id', getEmployeeById);
+router.post('/', createEmployee);
+router.put('/:id', updateEmployee);
+router.delete('/:id', deleteEmployee);
+router.put('/:id/permissions', updateEmployeePermissions);
+router.put('/:id/role', updateEmployeeRole);
+router.put('/:id/toggle-active', toggleEmployeeActive);
 
 module.exports = router;
