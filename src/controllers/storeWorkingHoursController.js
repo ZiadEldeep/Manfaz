@@ -269,7 +269,7 @@ const deleteSpecialDay = async (req, res) => {
     await prisma.storeWorkingHours.delete({
       where: {
         id: id,
-        storeId: parseInt(storeId),
+        storeId: storeId,
         isSpecialDay: true
       }
     });
