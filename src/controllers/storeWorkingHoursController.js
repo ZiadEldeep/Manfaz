@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const  translate  = require('translate-google');
+const  translate  = require('../translate');
 
 // التحقق مما إذا كان الوقت الحالي ضمن ساعات العمل
 const isTimeInRange = (currentTime, openTime, closeTime) => {

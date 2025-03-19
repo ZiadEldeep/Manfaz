@@ -1,6 +1,6 @@
 const { Prisma } = require('@prisma/client');
 const prisma = require('../prismaClient');
-const translate = require('translate-google');
+const translate = require('../translate');
 
 // Get All Orders
 const getAllOrders = async (req, res) => {

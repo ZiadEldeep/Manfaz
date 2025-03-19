@@ -1,7 +1,7 @@
 const prisma = require('../prismaClient');
 const { sendConfirmationEmail } = require('../utils/email');
 const { generateVerificationCode } = require('../utils/helpers');
-const translate = require('translate-google');
+const translate = require('../translate');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 // Register a new user

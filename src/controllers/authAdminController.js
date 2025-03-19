@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const prisma = require("../prismaClient"); // Ensure you have the Prisma client set up
-const translate = require("translate-google"); // Assuming you are using this for translations
+const translate = require('../translate');// Assuming you are using this for translations
 const { sendConfirmationEmail } = require("../utils/email");
 const { generateVerificationCode } = require("../utils/helpers");
 const generateAccessToken = (user) =>

@@ -1,5 +1,5 @@
 const prisma = require('../prismaClient');
-const translate = require('translate-google');
+const translate = require('../translate');
 const { addDays, startOfMonth, endOfMonth } = require("date-fns");
 // Get All Workers
 const getAllWorkers = async (req, res) => {

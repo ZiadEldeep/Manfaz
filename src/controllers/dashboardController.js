@@ -1,5 +1,5 @@
 const prisma = require("../prismaClient");
-const translate = require("translate-google");
+const translate = require("../translate");
 // async function checkPermissions(employeeId) {
 //   try {
 //     const employee = await prisma.employee.findUnique({

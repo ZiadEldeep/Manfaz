@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const translate = require('translate-google');
+const translate = require('../translate');
 
 const getAllUserLocations = async (req, res) => {
   const lang = req.query.lang || 'ar';
