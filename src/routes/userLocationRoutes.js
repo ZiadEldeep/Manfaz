@@ -12,7 +12,7 @@ const {
 const router = express.Router();
 
 // مسارات مواقع المستخدمين
-router.get('/', protect, getAllUserLocations);
+router.get('/', getAllUserLocations);
 router.get('/:userId', getUserLocations);
 router.post('/:userId', createUserLocation);
 router.put('/:id', updateUserLocation);
