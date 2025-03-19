@@ -2,7 +2,7 @@ const prisma = require('../prismaClient'); // Ensure you have the Prisma client 
 const { validationResult } = require('express-validator'); // For input validation
 const bcrypt = require('bcrypt'); // For password hashing
 const jwt = require('jsonwebtoken'); // For token management
-
+const { Prisma } = require('@prisma/client');
 
 // Get all employees
 const getAllEmployees = async (req, res) => {
@@ -39,7 +39,8 @@ const getAllEmployees = async (req, res) => {
 
     res.json({ success: true, data: {employees,total} });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر', data: null, code: 500 });
+    console.log(error);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر'+error, data: null, code: 500 });
   }
 };
 
