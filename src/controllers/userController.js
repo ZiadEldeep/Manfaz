@@ -4,7 +4,21 @@ const translate = require('../translate');
 const getAllUsers = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
-    const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany({
+      include:{
+        Order:{
+          select:{
+            id:true
+          }
+        },
+        Wallet:{
+          select:{
+            id:true,
+            balance:true
+          }
+        }
+      }
+    });
     const message = await translate('Users retrieved successfully', { to: lang });
 
     if (lang === 'en') {
@@ -49,6 +63,8 @@ const getUserById = async (req, res) => {
       where: { id },
       include: {
         locations: true,
+        Wallet:true,
+        Order:true,
         Worker:role==="worker"&&{
           include:{
             Order:{
