@@ -5,7 +5,7 @@ const translate = require('../translate');
 // Get All Orders
 const getAllOrders = async (req, res) => {
   const lang = req.query.lang || 'en';
-  const { userId, role, limit = 10, page = 1, search, status, paymentStatus } = req.query;
+  const { userId, role, limit = 10, page = 1, search, status, paymentStatus,date } = req.query;
   const skip = (page - 1) * limit;
   try {
     let searchTranslated = search ? await translate(search, { to: lang }) : undefined;
@@ -22,6 +22,10 @@ const getAllOrders = async (req, res) => {
     if (status) {
       statusCondition = { status: status };
     }
+    let dateCondition = {};
+    if (date) {
+      dateCondition = { createdAt: { gte: new Date(date) },updatedAt: { gte: new Date(date) } };
+    }
     let paymentStatusCondition = {};
     if (paymentStatus) {
       paymentStatusCondition = { paymentStatus: paymentStatus };
@@ -34,7 +38,7 @@ const getAllOrders = async (req, res) => {
         { createdAt: 'desc' }, // or 'desc'
         { updatedAt: 'desc' }  // or 'desc'
       ],
-      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition },
+      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition, ...dateCondition },
       include: {
         service: true,
         provider: {
