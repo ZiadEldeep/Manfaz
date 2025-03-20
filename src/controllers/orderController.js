@@ -126,6 +126,7 @@ const createOrder = async (req, res) => {
       duration,
       paymentMethod,
       store,
+      id,
       ...createOrderData
     } = req.body;
 
