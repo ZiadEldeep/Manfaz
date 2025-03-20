@@ -6,6 +6,7 @@ const translate = async (text, to) => {
     return translated.text;
   } catch (error) {
     console.error('Error translating text:', error);
+    
     return text;
   }
 };
