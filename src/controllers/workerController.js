@@ -17,6 +17,7 @@ const getAllWorkers = async (req, res) => {
         id: true,
         name: true,
         locations: true,
+        imageUrl: true
       },
     } }});
 
