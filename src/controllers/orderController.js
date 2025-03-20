@@ -1,7 +1,7 @@
 const { Prisma } = require('@prisma/client');
 const prisma = require('../prismaClient');
 const translate = require('../translate');
-
+const {endOfDay} = require('date-fns');
 // Get All Orders
 const getAllOrders = async (req, res) => {
   const lang = req.query.lang || 'en';
@@ -24,7 +24,7 @@ const getAllOrders = async (req, res) => {
     }
     let dateCondition = {};
     if (date) {
-      dateCondition = { createdAt: { gte: new Date(date),lte: (new Date(date)).endOf('day') },updatedAt: { gte: new Date(date),lte: (new Date(date)).endOf('day') } };
+      dateCondition = { createdAt: { gte: new Date(date),lte: endOfDay(new Date(date)) },updatedAt: { gte: new Date(date),lte: endOfDay(new Date(date)) } };
     }
     let paymentStatusCondition = {};
     if (paymentStatus) {
