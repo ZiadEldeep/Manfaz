@@ -71,6 +71,12 @@ const getUserById = async (req, res) => {
               take:5,
 
               include:{
+                service:{
+                  select:{
+                    id:true,
+                    name:true,
+                  }
+                },
                 user:{
                   select:{
                     id:true,
