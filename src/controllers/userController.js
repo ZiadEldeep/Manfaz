@@ -68,10 +68,30 @@ const getUserById = async (req, res) => {
         Worker:role==="worker"&&{
           include:{
             Order:{
-              take:5
+              take:5,
+
+              include:{
+                user:{
+                  select:{
+                    id:true,
+                    name:true,
+                    imageUrl:true
+                  }
+                }
+              }
             },
             reviews:{
-              take:5
+              take:5,
+
+              include:{
+                user:{
+                  select:{
+                    id:true,
+                    name:true,
+                    imageUrl:true
+                  }
+                }
+              }
             },
             earnings:{
               where:{
