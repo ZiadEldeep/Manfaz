@@ -24,7 +24,7 @@ const getAllOrders = async (req, res) => {
     }
     let dateCondition = {};
     if (date) {
-      dateCondition = { createdAt: { gte: new Date(date) },updatedAt: { gte: new Date(date) } };
+      dateCondition = { createdAt: { gte: new Date(date),lte: (new Date(date)).endOf('day') },updatedAt: { gte: new Date(date),lte: (new Date(date)).endOf('day') } };
     }
     let paymentStatusCondition = {};
     if (paymentStatus) {
