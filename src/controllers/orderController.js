@@ -27,7 +27,7 @@ const getAllOrders = async (req, res) => {
       paymentStatusCondition = { paymentStatus: paymentStatus };
     }
     const whereCondition =
-      role === 'user' ? { userId } : role === 'worker' ? { providerId: userId } : { deliveryDriverId: userId }
+      role === 'user' ? { userId } : role === 'worker' ? { provider: { userId } } : { deliveryDriver: { userId } }
 
     const orders = await prisma.order.findMany({
       orderBy: [
