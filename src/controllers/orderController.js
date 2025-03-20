@@ -30,6 +30,10 @@ const getAllOrders = async (req, res) => {
       role === 'user' ? { userId } : role === 'worker' ? { providerId: userId } : { deliveryDriverId: userId }
 
     const orders = await prisma.order.findMany({
+      orderBy: [
+        { createdAt: 'desc' }, // or 'desc'
+        { updatedAt: 'desc' }  // or 'desc'
+      ],
       where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition },
       include: {
         service: true,
@@ -70,6 +74,7 @@ const getAllOrders = async (req, res) => {
       },
       skip,
       take: +limit
+      
     });
 
     const message = await translate('Orders retrieved successfully', { to: lang });
