@@ -209,7 +209,7 @@ const createOrder = async (req, res) => {
           title: await translate('طلب خدمة جديد', { to: lang }),
           message: await translate(`لديك طلب خدمة جديد من ${user.name}`, { to: lang }),
           type: 'worker',
-          relatedId: providerId,
+          relatedId: provider.userId,
           isRead: false
         }
       });
