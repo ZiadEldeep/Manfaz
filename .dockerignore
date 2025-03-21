@@ -1,0 +1,27 @@
+# Ignore node_modules (سيتم تثبيته داخل الحاوية)
+node_modules
+
+# Ignore logs
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Ignore build/dist files
+dist
+build
+
+# Ignore environment files (لأنها تحتوي على بيانات حساسة)
+.env
+.env.local
+.env.development
+.env.production
+
+# Ignore Git files
+.git
+.gitignore
+
+# Ignore Docker and editor config files
+.docker
+.vscode
+.idea
+*.swp

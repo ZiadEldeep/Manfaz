@@ -1,6 +1,6 @@
 const { PrismaClient, Prisma } = require('@prisma/client');
 const prisma = new PrismaClient();
-const translate = require('translate-google');
+const translate = require('../translate');
 
 // الحصول على جميع المتاجر
 const getAllStores = async (req, res) => {
@@ -10,17 +10,23 @@ const getAllStores = async (req, res) => {
   let offset = (page - 1) * limit;
   let search = req.query.search || '';
   let categoryId = req.query.categoryId || '';
+  let filter = req.query.filter || '';
 
   try {
     let searchTranslated = search ? await translate(search, { to: 'en' }) : '';
-    let searchQuery = search ? {
+    let searchQuery = search ? {AND: [{
       OR: [
         { name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
         { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
         { type: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
         { address: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }
-      ]
-    } : {};
+      ]},
+      filter.length > 0?{categories:{
+  some:{id:filter}
+}}:{}
+   ] } : filter.length > 0?{categories:{
+    some:{id:filter}
+  }}:{};
 
     const [stores, totalStores] = await Promise.all([
       prisma.store.findMany({
@@ -206,7 +212,8 @@ const createStoreProduct = async (req, res) => {
       categoryId,
       ingredients,
       extras,
-      stock
+      stock,
+      rating
     } = req.body;
 
     // التحقق من البيانات المطلوبة
@@ -222,8 +229,8 @@ const createStoreProduct = async (req, res) => {
     ]);
 
     // ترجمة المكونات
-    const translatedIngredients = ingredients ? 
-      await Promise.all(ingredients.map(ingredient => translate(ingredient, { to: 'en' }))) : 
+    const translatedIngredients = ingredients ?
+      await Promise.all(ingredients.map(ingredient => translate(ingredient, { to: 'en' }))) :
       [];
 
     // ترجمة الإضافات
@@ -253,6 +260,7 @@ const createStoreProduct = async (req, res) => {
         images,
         storeId,
         categoryId,
+        rating: rating || 3.0,
         ingredients: translatedIngredients,
         extras: translatedExtras,
         stock: stock || 0,
@@ -296,7 +304,139 @@ const createStoreProduct = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
+const getStoreProductById=async (req,res)=>{
+  const lang = req.query.lang || 'ar';
+  try {
+    const { id } = req.params;
+    const product = await prisma.product.findUnique({
+      where: {
+        id
+      },
+      include: {
+        category: true,
+        store: true
+      }
+    });
+    if (!product) {
+      const message = await translate('Product not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+    if(lang==="en"){
+      return res.status(200).json({
+        status: true,
+        message: 'Product found successfully',
+        code: 200,
+        data: product
+      });
+    }
+    // ترجمة البيانات
+    const [translatedName, translatedDescription] = await Promise.all([
+      translate(product.name, { to: lang }),
+      product.description ? translate(product.description, { to: lang }) : null
+    ]);
 
+    // ترجمة المكونات
+    const translatedIngredients = product.ingredients ?
+      await Promise.all(product.ingredients.map(ingredient => translate(ingredient, { to: lang }))) :
+      [];
+
+    // ترجمة الإضافات
+    if (product.extras) {
+      if (product.extras.sizes) {
+        product.extras.sizes = await Promise.all(
+          product.extras.sizes.map(size => translate(size, { to: lang }))
+        );
+      }
+      if (product.extras.additions) {
+        product.extras.additions = await Promise.all(
+          product.extras.additions.map(async addition => ({
+            name: await translate(addition.name, { to: lang }),
+            price: addition.price
+          }))
+        );
+      }
+    }
+    const message = await translate('Product retrieved successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
+        ...product,
+        name: translatedName,
+        description: translatedDescription,
+        ingredients: translatedIngredients,
+        extras: product.extras
+      }
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+}
+// تعديل منتج في المتجر
+const updateStoreProduct = async (req, res) => {
+  const lang = req.query.lang || 'ar';
+  try {
+    const { storeId, id } = req.params;
+    const {
+      name,
+      description,
+      type,
+      image,
+      startDate,
+      endDate,
+      discount,
+      rating,
+      applicableProducts
+    } = req.body;
+    // التحقق من البيانات المطلوبة  
+    const product = await prisma.product.findUnique({
+      where: {
+        id
+      }
+    });
+    if (!product) {
+      const message = await translate('Product not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+    const store = await prisma.store.findUnique({
+      where: {
+        id: storeId
+      }
+    });
+    if (!store) {
+      const message = await translate('Store not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
+    const updatedProduct = await prisma.product.update({
+      where: {
+        id
+      },
+      data: {
+        name,
+        description,
+        type,
+        image,
+        startDate,
+        endDate,
+        discount,
+        applicableProducts,
+        rating
+      }
+    });
+    const message = await translate('Product updated successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: updatedProduct
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
 // إضافة عرض جديد للمتجر
 const createStoreOffer = async (req, res) => {
   const lang = req.query.lang || 'ar';
@@ -318,12 +458,12 @@ const createStoreOffer = async (req, res) => {
       const message = await translate('Name, type and discount are required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateDescription,translateType] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"}),translate(type,{to:"en"})]);
+    let [translateName, translateDescription, translateType] = await Promise.all([translate(name, { to: "en" }), translate(description, { to: "en" }), translate(type, { to: "en" })]);
     const offer = await prisma.storeOffer.create({
       data: {
-        name:translateName,
-        description:translateDescription,
-        type:translateType,
+        name: translateName,
+        description: translateDescription,
+        type: translateType,
         image,
         startDate,
         endDate,
@@ -350,14 +490,21 @@ const getStoreById = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-    
+
     const store = await prisma.store.findUnique({
       where: { id },
       include: {
         categories: true,
         products: true,
         offers: true,
-        locations: true
+        locations: true,
+        workingHours: true,
+        Coupon: true,
+        category: true,
+        Discount: true,
+        GiftCard: true,
+        Reward: true,
+        OrdersStore: true
       }
     });
 
@@ -365,29 +512,33 @@ const getStoreById = async (req, res) => {
       const message = await translate('Store not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
-    let [translatedStore,message] = await Promise.all([
-     Promise.all(store.map(async (store) => {
-        let [translatedName, translatedDescription, translatedType, translatedAddress] = await Promise.all([
-          translate(store.name, { to: lang }),
-          translate(store.description, { to: lang }),
-          translate(store.type, { to: lang }),
-          translate(store.address, { to: lang })
-        ]);
-      return {
+    if (lang === "en") {
+      return res.status(200).json({
+        status: true,
+        message: 'Store retrieved successfully',
+        code: 200,
+        data: store
+      })
+    }
+    let [translatedName, translatedDescription, translatedType, translatedAddress, message] = await Promise.all([
+      translate(store.name, { to: lang }),
+      translate(store.description, { to: lang }),
+      translate(store.type, { to: lang }),
+      translate(store.address, { to: lang }),
+      translate('Store retrieved successfully', { to: lang })
+    ]);
+
+    return res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: {
         ...store,
         name: translatedName,
         description: translatedDescription,
         type: translatedType,
         address: translatedAddress
-      };
-     })),
-      translate('Store retrieved successfully', { to: lang })
-    ]);
-    res.status(200).json({
-      status: true,
-      message,
-      code: 200,
-      data: translatedStore
+      }
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
@@ -401,15 +552,15 @@ const updateStore = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    let [translateName,translateDescription,translateType,translateAddress] = await Promise.all([translate(updateData.name,{to:"en"}),translate(updateData.description,{to:"en"}),translate(updateData.type,{to:"en"}),translate(updateData.address,{to:"en"})]);
+    let [translateName, translateDescription, translateType, translateAddress] = await Promise.all([translate(updateData.name, { to: "en" }), translate(updateData.description, { to: "en" }), translate(updateData.type, { to: "en" }), translate(updateData.address, { to: "en" })]);
     const store = await prisma.store.update({
       where: { id },
       data: {
         ...updateData,
-        name:translateName,
-        description:translateDescription,
-        type:translateType,
-        address:translateAddress,    
+        name: translateName,
+        description: translateDescription,
+        type: translateType,
+        address: translateAddress,
       }
     });
 
@@ -461,7 +612,7 @@ const getStoreCategories = async (req, res) => {
         products: true
       }
     });
-    let [translatedCategories,message] = await Promise.all([
+    let [translatedCategories, message] = await Promise.all([
       Promise.all(categories.map(async (category) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(category.name, { to: lang }),
@@ -492,15 +643,18 @@ const getAllStoreCategories = async (req, res) => {
   let page = req.query.page || 1;
   let offset = (page - 1) * limit;
   let search = req.query.search || '';
+  let categoryId = req.query.categoryId || '23456789rertyui98765457898765ertyu765678';
   try {
     let searchTranslated = search ? await translate(search, { to: lang }) : '';
-    let searchQuery = search ? {OR:[{name:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}},{description:{contains:searchTranslated,mode:Prisma.QueryMode.insensitive}}]} : {};
+    let searchQuery = search ? { OR: [{ name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }, { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }] } : {};
     const categories = await prisma.storeCategory.findMany({
-      where:searchQuery,
+      where: {...searchQuery,store:{
+        categoryId
+      }},
       skip: offset,
       take: +limit
     });
-    let [translatedCategories,message] = await Promise.all([
+    let [translatedCategories, message] = await Promise.all([
       Promise.all(categories.map(async (category) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(category.name, { to: lang }),
@@ -537,11 +691,11 @@ const createStoreCategory = async (req, res) => {
       const message = await translate('Category name is required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateDescription] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(name, { to: "en" }), translate(description, { to: "en" })]);
     const category = await prisma.storeCategory.create({
       data: {
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         image,
         sortOrder,
         storeId
@@ -590,7 +744,7 @@ const getStoreProducts = async (req, res) => {
       skip: offset,
       take: +limit
     });
-    let [translatedProducts,message] = await Promise.all([
+    let [translatedProducts, message] = await Promise.all([
       Promise.all(products.map(async (product) => {
         let [translatedName, translatedDescription, translatedIngredients, translatedSizes, translatedAdditions] = await Promise.all([
           translate(product.name, { to: lang }),
@@ -606,7 +760,7 @@ const getStoreProducts = async (req, res) => {
           ingredients: translatedIngredients,
           extras: {
             sizes: translatedSizes,
-            additions: translatedAdditions 
+            additions: translatedAdditions
           }
         };
       })),
@@ -638,12 +792,12 @@ const getStoreOffers = async (req, res) => {
     };
 
     const offers = await prisma.storeOffer.findMany({ where });
-    let [translatedOffers,message] = await Promise.all([
+    let [translatedOffers, message] = await Promise.all([
       Promise.all(offers.map(async (offer) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(offer.name, { to: lang }),
           translate(offer.description, { to: lang })
-        ]); 
+        ]);
         return {
           ...offer,
           name: translatedName,
@@ -673,12 +827,12 @@ const getStoreLocations = async (req, res) => {
     const locations = await prisma.storeLocation.findMany({
       where: { storeId }
     });
-    let [translatedLocations,message] = await Promise.all([
+    let [translatedLocations, message] = await Promise.all([
       Promise.all(locations.map(async (location) => {
         let [translatedName, translatedAddress] = await Promise.all([
           translate(location.name, { to: lang }),
           translate(location.address, { to: lang })
-        ]); 
+        ]);
         return {
           ...location,
           name: translatedName,
@@ -710,11 +864,11 @@ const createStoreLocation = async (req, res) => {
       const message = await translate('Location name and address are required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateAddress] = await Promise.all([translate(name,{to:"en"}),translate(address,{to:"en"})]);
+    let [translateName, translateAddress] = await Promise.all([translate(name, { to: "en" }), translate(address, { to: "en" })]);
     const location = await prisma.storeLocation.create({
       data: {
-        name:translateName,
-        address:translateAddress,
+        name: translateName,
+        address: translateAddress,
         latitude,
         longitude,
         phone,
@@ -741,7 +895,7 @@ const getStoreDiscounts = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { storeId } = req.params;
-    
+
     const discounts = await prisma.discount.findMany({
       where: {
         storeId,
@@ -750,12 +904,12 @@ const getStoreDiscounts = async (req, res) => {
         endDate: { gte: new Date() }
       }
     });
-    let [translatedDiscounts,message] = await Promise.all([
+    let [translatedDiscounts, message] = await Promise.all([
       Promise.all(discounts.map(async (discount) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(discount.name, { to: lang }),
           translate(discount.description, { to: lang })
-        ]); 
+        ]);
         return {
           ...discount,
           name: translatedName,
@@ -798,12 +952,12 @@ const createDiscount = async (req, res) => {
       const message = await translate('Missing required fields', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateDescription] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(name, { to: "en" }), translate(description, { to: "en" })]);
     const discount = await prisma.discount.create({
       data: {
         storeId,
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         type,
         value,
         startDate: new Date(startDate),
@@ -831,17 +985,17 @@ const createDiscount = async (req, res) => {
 const updateDiscount = async (req, res) => {
   const { storeId, id } = req.params;
   const { lang = 'en' } = req.query;
-  
+
   try {
-    let [translateName,translateDescription] = await Promise.all([translate(req.body.name,{to:"en"}),translate(req.body.description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(req.body.name, { to: "en" }), translate(req.body.description, { to: "en" })]);
     const discount = await prisma.discount.update({
       where: {
         id: parseInt(id),
         storeId: parseInt(storeId)
       },
       data: {
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         type: req.body.type,
         value: req.body.value,
         startDate: new Date(req.body.startDate),
@@ -902,7 +1056,7 @@ const getStoreCoupons = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { storeId } = req.params;
-    
+
     const coupons = await prisma.coupon.findMany({
       where: {
         storeId,
@@ -911,7 +1065,7 @@ const getStoreCoupons = async (req, res) => {
         endDate: { gte: new Date() }
       }
     });
-    let [translatedCoupons,message] = await Promise.all([
+    let [translatedCoupons, message] = await Promise.all([
       Promise.all(coupons.map(async (coupon) => {
         let [translatedName, translatedDescription] = await Promise.all([
           translate(coupon.name, { to: lang }),
@@ -961,7 +1115,7 @@ const createCoupon = async (req, res) => {
       const message = await translate('Missing required fields', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
-    let [translateName,translateDescription] = await Promise.all([translate(name,{to:"en"}),translate(description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(name, { to: "en" }), translate(description, { to: "en" })]);
     // التحقق من عدم وجود كوبون بنفس الكود
     const existingCoupon = await prisma.coupon.findUnique({
       where: { code }
@@ -976,8 +1130,8 @@ const createCoupon = async (req, res) => {
       data: {
         storeId,
         code,
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         type,
         value,
         startDate: new Date(startDate),
@@ -1038,7 +1192,7 @@ const validateCoupon = async (req, res) => {
     }
 
     // حساب قيمة الخصم
-    let discountAmount = coupon.type === 'PERCENTAGE' 
+    let discountAmount = coupon.type === 'PERCENTAGE'
       ? (orderAmount * coupon.value / 100)
       : coupon.value;
 
@@ -1081,9 +1235,9 @@ const validateCoupon = async (req, res) => {
 const updateCoupon = async (req, res) => {
   const { storeId, id } = req.params;
   const { lang = 'en' } = req.query;
-  
+
   try {
-    let [translateName,translateDescription] = await Promise.all([translate(req.body.name,{to:"en"}),translate(req.body.description,{to:"en"})]);
+    let [translateName, translateDescription] = await Promise.all([translate(req.body.name, { to: "en" }), translate(req.body.description, { to: "en" })]);
     const coupon = await prisma.coupon.update({
       where: {
         id: parseInt(id),
@@ -1091,8 +1245,8 @@ const updateCoupon = async (req, res) => {
       },
       data: {
         code: req.body.code,
-        name:translateName,
-        description:translateDescription,
+        name: translateName,
+        description: translateDescription,
         type: req.body.type,
         value: req.body.value,
         maxUses: req.body.maxUses,
@@ -1133,7 +1287,7 @@ const deleteCoupon = async (req, res) => {
 
     const message = await translate('Coupon deleted successfully', { to: lang });
     res.status(200).json({
-      status: true, 
+      status: true,
       message,
       code: 200,
       data: null
@@ -1156,6 +1310,8 @@ module.exports = {
   createStoreCategory,
   getStoreProducts,
   createStoreProduct,
+  getStoreProductById,
+  updateStoreProduct,
   getStoreOffers,
   createStoreOffer,
   getStoreLocations,

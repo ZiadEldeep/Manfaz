@@ -1,10 +1,24 @@
 const prisma = require('../prismaClient');
-const translate = require('translate-google');
+const translate = require('../translate');
 // Get All Users
 const getAllUsers = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
-    const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany({
+      include:{
+        Order:{
+          select:{
+            id:true
+          }
+        },
+        Wallet:{
+          select:{
+            id:true,
+            balance:true
+          }
+        }
+      }
+    });
     const message = await translate('Users retrieved successfully', { to: lang });
 
     if (lang === 'en') {
@@ -39,21 +53,93 @@ const getAllUsers = async (req, res) => {
 // Get User By ID
 const getUserById = async (req, res) => {
   const lang = req.query.lang || 'en';
+  const role = req.query.role || 'user';
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);   
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
       where: { id },
-    });
+      include: {
+        locations: true,
+        Wallet:true,
+        Order:true,
+        Worker:role==="worker"&&{
+          include:{
+            Order:{
+              take:5,
 
-    if (!user) {
-      const message = await translate('User not found', { to: lang });
-      return res.status(404).json({
-        status: false,
-        message,
-        code: 404,
-        data: null,
-      });
-    }
+              include:{
+                service:{
+                  select:{
+                    id:true,
+                    name:true,
+                  }
+                },
+                user:{
+                  select:{
+                    id:true,
+                    name:true,
+                    imageUrl:true
+                  }
+                }
+              }
+            },
+            reviews:{
+              take:5,
+
+              include:{
+                user:{
+                  select:{
+                    id:true,
+                    name:true,
+                    imageUrl:true
+                  }
+                }
+              }
+            },
+            earnings:{
+              where:{
+                createdAt:{
+                  gte:startOfMonth
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    
+        if (!user) {
+          const message = await translate('User not found', { to: lang });
+          return res.status(404).json({
+            status: false,
+            message,
+            code: 404,
+            data: null,
+          });
+        }
+        let totalEarnings =role==="worker"? await prisma.earning.aggregate({
+          _sum: {
+            amount: true,
+          },
+          where: {
+            workerId: user.Worker?.[0]?.id,
+          },
+        }):null;
+    let totalOrders = await prisma.order.count({
+      where:role==="worker"?{
+        providerId: user.Worker?.[0]?.id
+      }:role==="user"?{
+        userId: id
+      }:null
+    });
+    let totalReviews =role==="worker"? await prisma.review.count({
+      where:{
+        workerId: user.Worker?.[0]?.id
+      }
+    }):0;
 
     const message = await translate('User retrieved successfully', { to: lang });
 
@@ -62,24 +148,28 @@ const getUserById = async (req, res) => {
         status: true,
         message,
         code: 200,
-        data: user
+        data: {...user,
+          totalOrders,
+          totalReviews,
+          totalEarnings:totalEarnings?._sum?.amount || 0
+        }
       });
       return;
     }
-
-    // ترجمة اسم المستخدم للغة المطلوبة
-    const translatedName = await translate(user.name, { to: lang });
-
+    let workerTranslated = await translate(user.Worker?.[0]?.title||'', { to: lang });
     res.status(200).json({
       status: true,
       message,
       code: 200,
       data: {
-        ...user,
-        name: translatedName
+        ...{...user,Worker:role==="worker"?[...user.Worker,{...user.Worker?.[0],title:workerTranslated}]:[]},
+        totalOrders,
+        totalReviews,
+        totalEarnings:totalEarnings?._sum?.amount || 0
       }
     });
   } catch (error) {
+    console.log(error);
     const message = await translate(error.message, { to: lang });
     res.status(500).json({
       status: false,

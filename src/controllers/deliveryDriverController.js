@@ -1,5 +1,5 @@
 const prisma = require('../prismaClient');
-const translate = require('translate-google');
+const translate = require('../translate');
 
 // الحصول على جميع السائقين
 const getAllDeliveryDrivers = async (req, res) => {

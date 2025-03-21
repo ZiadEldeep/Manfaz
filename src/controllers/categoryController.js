@@ -1,10 +1,10 @@
 const { Prisma } = require('@prisma/client');
 const prisma = require('../prismaClient');
-const translate = require('translate-google');
+const translate = require('../translate');
 
 // الحصول على جميع التصنيفات
 const getAllCategories = async (req, res) => {
-  const lang = req.query.lang || 'ar';
+  const lang = req.query.lang || 'en';
   const type = req.query.type;
   const search = req.query.search;
   const page = parseInt(req.query.page) || 1;
@@ -34,11 +34,7 @@ const getAllCategories = async (req, res) => {
         include: {
           services: true,
           Store: true,
-          WorkerCategory: {
-            include: {
-              worker: true
-            }
-          }
+          // WorkerCategory: true
         }
       }),
       prisma.category.count({ where })

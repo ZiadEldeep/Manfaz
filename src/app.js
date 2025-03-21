@@ -40,27 +40,24 @@ initializeSocket(io);
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000',"http://manfaz.vercel.app/","https://manfaz-dashboard.vercel.app/"],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: ['http://localhost:3000',"https://manfaz.vercel.app","https://manfaz-dashboard.vercel.app"], // Allow requests from this origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
+
 app.use(express.json());
 app.use(cookieParser());
 
-// إضافة io إلى req لاستخدامه في المتحكمات
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "http://localhost:3000"); 
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.header("Access-Control-Allow-Credentials", "true");
-    // Add Socket.IO instance to request object
-    req.io = io;
-    next();
-});
 
-// تسجيل الموجهات
-
+// app.use((req, res, next) => {
+//     res.header("Access-Control-Allow-Origin", ['http://localhost:3000',"https://manfaz.vercel.app","https://manfaz-dashboard.vercel.app"]); 
+//     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+//     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+//     res.header("Access-Control-Allow-Credentials", "true");
+//     next();
+// });
+// Routes
 app.use('/auth', authRoutes);
 app.use('/auth-admin', authAdminRoutes);
 app.use('/users', userRoutes);

@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const  translate  = require('translate-google');
+const  translate  = require('../translate');
 
 // التحقق مما إذا كان الوقت الحالي ضمن ساعات العمل
 const isTimeInRange = (currentTime, openTime, closeTime) => {
@@ -268,8 +268,8 @@ const deleteSpecialDay = async (req, res) => {
 
     await prisma.storeWorkingHours.delete({
       where: {
-        id: parseInt(id),
-        storeId: parseInt(storeId),
+        id: id,
+        storeId: storeId,
         isSpecialDay: true
       }
     });

@@ -1,11 +1,11 @@
 const { Prisma } = require('@prisma/client');
 const prisma = require('../prismaClient');
-const translate = require('translate-google');
-
+const translate = require('../translate');
+const {endOfDay} = require('date-fns');
 // Get All Orders
 const getAllOrders = async (req, res) => {
   const lang = req.query.lang || 'en';
-  const { userId, role, limit = 10, page = 1, search, status, paymentStatus } = req.query;
+  const { userId, role, limit = 10, page = 1, search, status, paymentStatus,date } = req.query;
   const skip = (page - 1) * limit;
   try {
     let searchTranslated = search ? await translate(search, { to: lang }) : undefined;
@@ -22,31 +22,69 @@ const getAllOrders = async (req, res) => {
     if (status) {
       statusCondition = { status: status };
     }
+    let dateCondition = {};
+    if (date) {
+      dateCondition = { createdAt: { gte: new Date(date),lte: endOfDay(new Date(date)) },updatedAt: { gte: new Date(date),lte: endOfDay(new Date(date)) } };
+    }
     let paymentStatusCondition = {};
     if (paymentStatus) {
       paymentStatusCondition = { paymentStatus: paymentStatus };
     }
     const whereCondition =
-      role === 'user' ? { userId } : role === 'worker' ? { providerId: userId } : { deliveryDriverId: userId }
+      role === 'user' ? { userId } : role === 'worker' ? { provider: { userId } } : { deliveryDriver: { userId } }
 
     const orders = await prisma.order.findMany({
-      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition },
+      orderBy: [
+        { createdAt: 'desc' }, // or 'desc'
+        { updatedAt: 'desc' }  // or 'desc'
+      ],
+      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition, ...dateCondition },
       include: {
         service: true,
-        provider: true,
-        deliveryDriver: true,
-        store: true,
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true
+              }
+            }
+          }
+        },
+        deliveryDriver: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true
+              }
+            }
+          }
+        },
+        store: {
+          include: {
+            store:{
+              select:{
+                id:true,
+                name:true,
+                logo:true
+              }
+            }
+          }
+        },
         user: true,
-        location: true
       },
       skip,
       take: +limit
+      
     });
 
     const message = await translate('Orders retrieved successfully', { to: lang });
 
-    const totalOrders = await prisma.order.count({ 
-      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition } 
+    const totalOrders = await prisma.order.count({
+      where: { ...whereCondition, ...searchCondition, ...statusCondition, ...paymentStatusCondition }
     });
     const totalPages = Math.ceil(totalOrders / limit);
 
@@ -90,11 +128,14 @@ const createOrder = async (req, res) => {
       type,
       notes,
       imageUrl,
-      locationId,
+      latitude,
+      longitude,
+      address,
       price,
       duration,
       paymentMethod,
       store,
+      id,
       ...createOrderData
     } = req.body;
 
@@ -112,13 +153,6 @@ const createOrder = async (req, res) => {
     });
     if (!user) {
       const message = await translate('User not found', { to: lang });
-      return res.status(404).json({ status: false, message, code: 404, data: null });
-    }
-    const location = await prisma.userLocation.findUnique({
-      where: { id: locationId }
-    });
-    if (!location) {
-      const message = await translate('User Location not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
 
@@ -145,14 +179,18 @@ const createOrder = async (req, res) => {
           user: {
             connect: { id: user.id }
           },
-          serviceId,
-          providerId,
+          service: {
+            connect: { id: service.id } // Connect the service by their ID
+          },
+          provider: {
+            connect: { id: provider.id } // Connect the provider by their ID
+          },
           totalAmount,
           notes: notesTranslated,
           imageUrl,
-          location: {
-            connect: { id: location.id }
-          },
+          latitude,
+          longitude,
+          address,
           price,
           duration,
           ...createOrderData,
@@ -162,7 +200,6 @@ const createOrder = async (req, res) => {
           user: true,
           service: true,
           provider: true,
-          location: true
         }
       });
 
@@ -203,16 +240,18 @@ const createOrder = async (req, res) => {
           totalAmount,
           notes: notesTranslated,
           imageUrl,
-          location: {
-            connect: { id: location.id }
-          },
+          latitude,
+          longitude,
+          address,
           price,
           duration,
           ...createOrderData,
           paymentMethod,
           store: {
             create: store.map((store) => ({
-              storeId: store.storeId,
+              store: {
+                connect: { id: store.storeId } // Connect the store by their ID
+              },
               products: {
                 create: store.products.map((product) => ({
                   productId: product.productId,
@@ -234,7 +273,6 @@ const createOrder = async (req, res) => {
               }
             }
           },
-          location: true
         }
       });
 
@@ -306,7 +344,6 @@ const getOrderById = async (req, res) => {
         service: true,
         provider: true,
         store: true,
-        location: true
       }
     });
 
