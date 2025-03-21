@@ -543,4 +543,288 @@ socket.on('orderUpdated', (order) => {
     orders: state.orders.map(o => o.id === order.id ? order : o)
   }));
 });
+```
+
+## معالجة إشعارات الطلبات
+
+### 1. واجهة المستخدم (User Interface)
+
+```typescript
+// components/OrderNotifications.tsx
+import React, { useEffect } from 'react';
+import { useSocket } from '../hooks/useSocket';
+import { toast } from 'react-toastify';
+
+export const OrderNotifications: React.FC = () => {
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // استقبال إشعارات الطلبات
+    socket.on('newNotification', (notification) => {
+      // عرض الإشعار باستخدام react-toastify
+      toast.info(notification.message, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        rtl: true // للغة العربية
+      });
+    });
+
+    return () => {
+      socket.off('newNotification');
+    };
+  }, [socket]);
+
+  return null;
+};
+```
+
+### 2. واجهة العامل (Worker Interface)
+
+```typescript
+// components/WorkerOrderActions.tsx
+import React, { useState } from 'react';
+import { useSocket } from '../hooks/useSocket';
+
+interface OrderActionsProps {
+  orderId: string;
+  onUpdate: (status: string) => void;
+}
+
+export const WorkerOrderActions: React.FC<OrderActionsProps> = ({ orderId, onUpdate }) => {
+  const [rejectionMessage, setRejectionMessage] = useState('');
+  const socket = useSocket();
+
+  const handleAcceptOrder = () => {
+    if (!socket) return;
+
+    socket.emit('updateOrder', {
+      orderId,
+      status: 'in_progress',
+      updatedBy: 'worker'
+    });
+
+    onUpdate('in_progress');
+  };
+
+  const handleRejectOrder = () => {
+    if (!socket) return;
+
+    socket.emit('updateOrder', {
+      orderId,
+      status: 'canceled',
+      updatedBy: 'worker',
+      rejectionMessage: rejectionMessage || undefined
+    });
+
+    onUpdate('canceled');
+  };
+
+  return (
+    <div className="order-actions">
+      <button 
+        onClick={handleAcceptOrder}
+        className="accept-button"
+      >
+        قبول الطلب
+      </button>
+
+      <div className="reject-section">
+        <textarea
+          value={rejectionMessage}
+          onChange={(e) => setRejectionMessage(e.target.value)}
+          placeholder="سبب الرفض (اختياري)"
+        />
+        <button 
+          onClick={handleRejectOrder}
+          className="reject-button"
+        >
+          رفض الطلب
+        </button>
+      </div>
+    </div>
+  );
+};
+```
+
+### 3. واجهة الموظف (Employee Interface)
+
+```typescript
+// components/EmployeeOrderNotifications.tsx
+import React, { useEffect, useState } from 'react';
+import { useSocket } from '../hooks/useSocket';
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  createdAt: Date;
+  isRead: boolean;
+}
+
+export const EmployeeOrderNotifications: React.FC = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // استقبال إشعارات الطلبات المكتملة
+    socket.on('newNotification', (notification) => {
+      setNotifications(prev => [notification, ...prev]);
+    });
+
+    return () => {
+      socket.off('newNotification');
+    };
+  }, [socket]);
+
+  const markAsRead = (notificationId: string) => {
+    socket?.emit('markNotificationAsRead', notificationId);
+    setNotifications(prev =>
+      prev.map(notification =>
+        notification.id === notificationId
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
+  };
+
+  return (
+    <div className="notifications-container">
+      <h3>إشعارات الطلبات المكتملة</h3>
+      <div className="notifications-list">
+        {notifications.map(notification => (
+          <div
+            key={notification.id}
+            className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
+            onClick={() => markAsRead(notification.id)}
+          >
+            <h4>{notification.title}</h4>
+            <p>{notification.message}</p>
+            <span className="notification-time">
+              {new Date(notification.createdAt).toLocaleString('ar-SA')}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+### 4. الأنماط CSS
+
+```css
+/* styles/order-notifications.css */
+.order-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.accept-button,
+.reject-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.accept-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.reject-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.reject-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reject-section textarea {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-height: 100px;
+  resize: vertical;
+}
+
+.notifications-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.notification-item {
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.notification-item.unread {
+  background-color: #f0f7ff;
+}
+
+.notification-item:hover {
+  background-color: #f8f9fa;
+}
+
+.notification-time {
+  font-size: 0.8rem;
+  color: #666;
+}
+```
+
+### 5. استخدام المكونات
+
+```typescript
+// pages/worker/orders.tsx
+import { WorkerOrderActions } from '../../components/WorkerOrderActions';
+
+export const WorkerOrdersPage = () => {
+  const handleOrderUpdate = (status: string) => {
+    // تحديث واجهة المستخدم بناءً على حالة الطلب
+    console.log(`Order status updated to: ${status}`);
+  };
+
+  return (
+    <div>
+      <h2>الطلبات الجديدة</h2>
+      {/* عرض قائمة الطلبات */}
+      <WorkerOrderActions
+        orderId="ORDER_ID"
+        onUpdate={handleOrderUpdate}
+      />
+    </div>
+  );
+};
+
+// pages/employee/dashboard.tsx
+import { EmployeeOrderNotifications } from '../../components/EmployeeOrderNotifications';
+
+export const EmployeeDashboard = () => {
+  return (
+    <div>
+      <h2>لوحة التحكم</h2>
+      <EmployeeOrderNotifications />
+      {/* باقي محتوى لوحة التحكم */}
+    </div>
+  );
+};
 ``` 

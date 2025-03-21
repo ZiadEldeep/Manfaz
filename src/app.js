@@ -22,6 +22,7 @@ const userLocationRoutes = require('./routes/userLocationRoutes');
 const employeeRoutes = require('./routes/employeeRoutes.js');
 const employeeActivitiesRoutes = require('./routes/employeeActivitiesRoutes.js');
 const dashboardRoutes = require('./routes/dashboardRoutes.js');
+const notificationRoutes = require('./routes/notificationRoutes.js');
 
 const app = express();
 const httpServer = createServer(app);
@@ -76,6 +77,7 @@ app.use('/locations', userLocationRoutes);
 app.use('/employees', employeeRoutes);
 app.use('/employees-activities', employeeActivitiesRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use('/notifications', notificationRoutes);
 
 // معالجة الأخطاء
 app.use((err, req, res, next) => {

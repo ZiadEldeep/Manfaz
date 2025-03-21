@@ -166,8 +166,20 @@ const createOrder = async (req, res) => {
         }
       });
 
-      // إرسال إشعار للعامل عبر Socket.IO
+      // إنشاء إشعار للعامل
+      const workerNotification = await prisma.notification.create({
+        data: {
+          title: await translate('طلب خدمة جديد', { to: lang }),
+          message: await translate(`لديك طلب خدمة جديد من ${user.name}`, { to: lang }),
+          type: 'worker',
+          relatedId: providerId,
+          isRead: false
+        }
+      });
+
+      // إرسال الإشعار للعامل عبر Socket.IO
       if (req.io) {
+        req.io.to(`worker:${providerId}`).emit('newNotification', workerNotification);
         req.io.to(`worker_${providerId}`).emit('newOrder', {
           type: 'service',
           order: newOrder
@@ -225,6 +237,31 @@ const createOrder = async (req, res) => {
           location: true
         }
       });
+
+      // إنشاء إشعار للموظفين
+      const employees = await prisma.employee.findMany({
+        where: {
+          role: 'customer_service',
+          isActive: true
+        }
+      });
+
+      for (const employee of employees) {
+        const employeeNotification = await prisma.notification.create({
+          data: {
+            title: await translate('طلب توصيل جديد', { to: lang }),
+            message: await translate(`لديك طلب توصيل جديد من ${user.name}`, { to: lang }),
+            type: 'employee',
+            relatedId: employee.id,
+            isRead: false
+          }
+        });
+
+        // إرسال الإشعار للموظف عبر Socket.IO
+        if (req.io) {
+          req.io.to(`employee:${employee.id}`).emit('newNotification', employeeNotification);
+        }
+      }
 
       // إرسال إشعار للمتاجر عبر Socket.IO
       if (req.io) {
@@ -302,11 +339,17 @@ const updateOrder = async (req, res) => {
       paymentStatus,
       price,
       duration,
-      updatedBy
+      updatedBy,
+      rejectionMessage
     } = req.body;
 
     const order = await prisma.order.findUnique({
       where: { id },
+      include: {
+        user: true,
+        provider: true,
+        store: true
+      }
     });
 
     if (!order) {
@@ -333,7 +376,37 @@ const updateOrder = async (req, res) => {
     // إرسال إشعارات عبر Socket.IO
     if (req.io) {
       if (updatedBy === 'worker') {
-        req.io.to(`user_${order.userId}`).emit('orderUpdated', updatedOrder);
+        if (status === 'in_progress') {
+          // إشعار الموافقة على الطلب
+          const userNotification = await prisma.notification.create({
+            data: {
+              title: await translate('تم قبول طلبك', { to: lang }),
+              message: await translate(`قام العامل ${order.provider.title} بقبول طلبك وجاري تنفيذه`, { to: lang }),
+              type: 'user',
+              relatedId: order.userId,
+              isRead: false
+            }
+          });
+
+          req.io.to(`user_${order.userId}`).emit('newNotification', userNotification);
+        } else if (status === 'canceled') {
+          // إشعار رفض الطلب
+          const userNotification = await prisma.notification.create({
+            data: {
+              title: await translate('تم رفض طلبك', { to: lang }),
+              message: await translate(
+                rejectionMessage || 
+                `عذراً، قام العامل ${order.provider.title} برفض طلبك. يمكنك تجربة عمال آخرين.`, 
+                { to: lang }
+              ),
+              type: 'user',
+              relatedId: order.userId,
+              isRead: false
+            }
+          });
+
+          req.io.to(`user_${order.userId}`).emit('newNotification', userNotification);
+        }
       } else if (updatedBy === 'user') {
         if (order.providerId) {
           req.io.to(`worker_${order.providerId}`).emit('orderUpdated', updatedOrder);
@@ -342,6 +415,44 @@ const updateOrder = async (req, res) => {
           req.io.to(`store_${store.id}`).emit('orderUpdated', updatedOrder);
         });
       }
+
+      // إرسال إشعار عند اكتمال الطلب
+      if (status === 'completed') {
+        const userNotification = await prisma.notification.create({
+          data: {
+            title: await translate('تم إكمال طلبك', { to: lang }),
+            message: await translate(`تم إكمال طلبك بنجاح. نتمنى أن تكون راضياً عن الخدمة المقدمة`, { to: lang }),
+            type: 'user',
+            relatedId: order.userId,
+            isRead: false
+          }
+        });
+
+        // إرسال إشعار للموظفين
+        const employees = await prisma.employee.findMany({
+          where: {
+            role: 'customer_service',
+            isActive: true
+          }
+        });
+
+        for (const employee of employees) {
+          const employeeNotification = await prisma.notification.create({
+            data: {
+              title: await translate('طلب مكتمل', { to: lang }),
+              message: await translate(`تم إكمال الطلب رقم ${order.id} بنجاح`, { to: lang }),
+              type: 'employee',
+              relatedId: employee.id,
+              isRead: false
+            }
+          });
+
+          req.io.to(`employee:${employee.id}`).emit('newNotification', employeeNotification);
+        }
+
+        req.io.to(`user_${order.userId}`).emit('newNotification', userNotification);
+      }
+
       req.io.to('admin').emit('orderUpdated', updatedOrder);
     }
 

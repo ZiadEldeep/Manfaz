@@ -32,6 +32,7 @@ model User {
   locations   UserLocation[]
 
   Review Review[]
+  notifications Notification[]
 }
 enum UserRole {
   user
@@ -155,6 +156,7 @@ model Worker {
   reviews         Review[]
   Order Order[]
   schedule Schedule[]
+  notifications Notification[]
 
   WorkerCategory WorkerCategory[]
 }
@@ -587,6 +589,7 @@ model Employee {
   isActive    Boolean             @default(true)
   lastLoginAt DateTime?
   activities  EmployeeActivity[]
+  notifications Notification[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 }
@@ -670,6 +673,28 @@ enum EmployeeRole {
   sales
   supervisor
   admin
+}
+
+model Notification {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  message     String
+  type        NotificationType
+  relatedId   String     @db.ObjectId
+  isRead      Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // العلاقات الاختيارية مع النماذج المختلفة
+  user        User?      @relation(fields: [relatedId], references: [id])
+  employee    Employee?  @relation(fields: [relatedId], references: [id])
+  worker      Worker?    @relation(fields: [relatedId], references: [id])
+}
+
+enum NotificationType {
+  user
+  employee
+  worker
 }
 
 

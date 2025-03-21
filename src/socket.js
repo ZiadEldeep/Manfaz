@@ -12,7 +12,21 @@ const initializeSocket = (io) => {
   const connectedUsers = new Map();
 
   io.on('connection', (socket) => {
-    console.log('New client connected');
+    console.log('Client connected:', socket.id);
+
+    // الانضمام إلى غرفة إشعارات محددة
+    socket.on('joinNotificationRoom', ({ type, id }) => {
+      const room = `${type}:${id}`;
+      socket.join(room);
+      console.log(`Client ${socket.id} joined notification room: ${room}`);
+    });
+
+    // مغادرة غرفة إشعارات محددة
+    socket.on('leaveNotificationRoom', ({ type, id }) => {
+      const room = `${type}:${id}`;
+      socket.leave(room);
+      console.log(`Client ${socket.id} left notification room: ${room}`);
+    });
 
     // تسجيل المستخدم في الغرفة المناسبة
     socket.on('register', ({ type, id }) => {
@@ -25,19 +39,24 @@ const initializeSocket = (io) => {
         }
       });
 
-      // إضافة المستخدم للغرفة المناسبة
+      // إضافة المستخدم للغرف المناسبة
       switch (type) {
         case 'user':
           socket.join(`user_${id}`);
+          socket.join(`user:${id}`); // غرفة الإشعارات
           break;
         case 'worker':
           socket.join(`worker_${id}`);
+          socket.join(`worker:${id}`); // غرفة الإشعارات
           break;
         case 'store':
           socket.join(`store_${id}`);
           break;
         case 'admin':
           socket.join('admin');
+          break;
+        case 'employee':
+          socket.join(`employee:${id}`); // غرفة الإشعارات
           break;
       }
 
@@ -154,7 +173,7 @@ const initializeSocket = (io) => {
         
         connectedUsers.delete(socket.id);
       }
-      console.log('Client disconnected');
+      console.log('Client disconnected:', socket.id);
     });
   });
 };
