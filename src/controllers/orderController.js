@@ -213,6 +213,24 @@ const createOrder = async (req, res) => {
           relatedId: provider.userId,
           orderId: newOrder.id,
           isRead: false
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              imageUrl: true
+            }
+          },
+          order:{
+            select:{
+              service:{
+                select:{
+                  name:true
+                }
+              }
+            }
+          }
         }
       });
 
@@ -296,6 +314,24 @@ const createOrder = async (req, res) => {
             orderId: newOrder.id,
             relatedId: employee.id,
             isRead: false
+          },
+          include: {
+            sender: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true
+              }
+            },
+            order:{
+              select:{
+                service:{
+                  select:{
+                    name:true
+                  }
+                }
+              }
+            }
           }
         });
 
@@ -428,6 +464,23 @@ const updateOrder = async (req, res) => {
               relatedId: order.userId,
               orderId: order.id,
               isRead: false
+            },include: {
+              sender: {
+                select: {
+                  id: true,
+                  name: true,
+                  imageUrl: true
+                }
+              },
+              order:{
+                select:{
+                  service:{
+                    select:{
+                      name:true
+                    }
+                  }
+                }
+              }
             }
           });
 
@@ -447,6 +500,23 @@ const updateOrder = async (req, res) => {
               orderId: order.id,
               senderId: order.provider.userId,
               isRead: false
+            },include: {
+              sender: {
+                select: {
+                  id: true,
+                  name: true,
+                  imageUrl: true
+                }
+              },
+              order:{
+                select:{
+                  service:{
+                    select:{
+                      name:true
+                    }
+                  }
+                }
+              }
             }
           });
 
@@ -469,7 +539,27 @@ const updateOrder = async (req, res) => {
             message: await translate(`تم إكمال طلبك بنجاح. نتمنى أن تكون راضياً عن الخدمة المقدمة`, { to: lang }),
             type: 'user',
             relatedId: order.userId,
+            orderId: order.id,
+            senderId: order.provider.userId,
             isRead: false
+          },
+          include: {
+            sender: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true
+              }
+            },
+            order:{
+              select:{
+                service:{
+                  select:{
+                    name:true
+                  }
+                }
+              }
+            }
           }
         });
 
@@ -488,7 +578,27 @@ const updateOrder = async (req, res) => {
               message: await translate(`تم إكمال الطلب رقم ${order.id} بنجاح`, { to: lang }),
               type: 'employee',
               relatedId: employee.id,
+              orderId: order.id,
+              senderId: order.userId,
               isRead: false
+            },
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  name: true,
+                  imageUrl: true
+                }
+              },
+              order:{
+                select:{
+                  service:{
+                    select:{
+                      name:true
+                    }
+                  }
+                }
+              }
             }
           });
 
