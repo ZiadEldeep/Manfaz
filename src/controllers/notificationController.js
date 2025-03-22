@@ -96,15 +96,13 @@ const getNotifications = async (req, res) => {
                 },
                 order:{
                     select:{
-                        id:true
-                    },
-                    include:{
+                        id:true,
                         service:{
                             select:{
                                 name:true
                             }
                         }
-                    }
+                    },
                 }
             },
             orderBy: {

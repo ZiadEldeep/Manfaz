@@ -756,7 +756,7 @@ model Notification {
   type        NotificationType
   relatedId   String     @db.ObjectId
   senderId    String    @db.ObjectId
-  orderId   String    @db.ObjectId
+  orderId   String?    @db.ObjectId
   isRead      Boolean    @default(false)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt

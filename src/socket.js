@@ -1,5 +1,5 @@
-const prisma = require('./prismaClient');
-const translate = require('translate-google');
+// const prisma = require('./prismaClient');
+// const translate = require('translate-google');
 
 // تخزين اتصالات المستخدمين
 const connectedUsers = new Map();
@@ -10,37 +10,20 @@ const connectedAdmins = new Map();
 const initializeSocket = (io) => {
   // تخزين معلومات المستخدمين المتصلين
   const connectedUsers = new Map();
-
+  
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
-    socket.on("newNotification", (data) => {
-      console.log(data);
-    })
-    // الانضمام إلى غرفة إشعارات محددة
-    socket.on('joinNotificationRoom', ({ type, id }) => {
-      const room = `${type}:${id}`;
-      socket.join(room);
-      console.log(`Client ${socket.id} joined notification room: ${room}`);
-    });
-
-    // مغادرة غرفة إشعارات محددة
-    socket.on('leaveNotificationRoom', ({ type, id }) => {
-      const room = `${type}:${id}`;
-      socket.leave(room);
-      console.log(`Client ${socket.id} left notification room: ${room}`);
-    });
-
     // تسجيل المستخدم في الغرفة المناسبة
     socket.on('register', ({ type, id }) => {
-      if (!id) return;
       console.log("type",type,"id",id)
+      if (!id) return;
       // إزالة المستخدم من الغرف السابقة
       socket.rooms.forEach((room) => {
         if (room !== socket.id) {
           socket.leave(room);
         }
       });
-
+  
       // إضافة المستخدم للغرف المناسبة
       switch (type) {
         case 'user':
@@ -61,10 +44,28 @@ const initializeSocket = (io) => {
           socket.join(`employee:${id}`); // غرفة الإشعارات
           break;
       }
-
+  
       connectedUsers.set(socket.id, { type, id });
       console.log(`${type} ${id} registered`);
+      console.log(`User of type ${type} with ID ${id} joined room ${type}:${id}`);
     });
+    socket.on("newNotification", (data) => {
+      console.log(data);
+    })
+    // الانضمام إلى غرفة إشعارات محددة
+    socket.on('joinNotificationRoom', ({ type, id }) => {
+      const room = `${type}:${id}`;
+      socket.join(room);
+      console.log(`Client ${socket.id} joined notification room: ${room}`);
+    });
+
+    // مغادرة غرفة إشعارات محددة
+    socket.on('leaveNotificationRoom', ({ type, id }) => {
+      const room = `${type}:${id}`;
+      socket.leave(room);
+      console.log(`Client ${socket.id} left notification room: ${room}`);
+    });
+
 
     // معالجة تحديثات الموقع
     socket.on('updateLocation', async (data) => {

@@ -211,7 +211,7 @@ const createOrder = async (req, res) => {
           type: 'worker',
           senderId: user.id,
           relatedId: provider.userId,
-          serviceId: service.id,
+          orderId: newOrder.id,
           isRead: false
         }
       });
@@ -426,7 +426,7 @@ const updateOrder = async (req, res) => {
               type: 'user',
               senderId: order.provider.userId,
               relatedId: order.userId,
-              serviceId: order.serviceId,
+              orderId: order.id,
               isRead: false
             }
           });
@@ -444,8 +444,8 @@ const updateOrder = async (req, res) => {
               ),
               type: 'user',
               relatedId: order.userId,
+              orderId: order.id,
               senderId: order.provider.userId,
-              serviceId: order.serviceId,
               isRead: false
             }
           });
