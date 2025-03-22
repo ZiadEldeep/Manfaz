@@ -64,6 +64,9 @@ const createNotification = async (req, res) => {
 // دالة جلب إشعارات مستخدم معين
 const getNotifications = async (req, res) => {
     let lang = req.query.lang || 'en';
+    let limit = req.query.limit || 10;
+    let page = req.query.page || 1;
+    let skip = (page - 1) * limit;
     try {
         const { type, id } = req.params;
 
@@ -84,12 +87,24 @@ const getNotifications = async (req, res) => {
                 relatedId: id
             },
             include:{
-                sender:true,
-                service:true
+                sender:{
+                    select:{
+                        id:true,
+                        name:true,
+                        imageUrl:true
+                    }
+                },
+                service:{
+                    select:{
+                        name:true
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc'
-            }
+            },
+            skip,
+            take: limit
         }),
         prisma.notification.count({
             where: {
@@ -160,23 +175,25 @@ const markAsRead = async (req, res) => {
 // دالة حذف إشعار
 const deleteNotification = async (req, res) => {
     try {
+        const lang = req.query.lang || 'en';
         const { id } = req.params;
 
         await prisma.notification.delete({
             where: { id }
         });
-
+let message=await translate('تم حذف الإشعار بنجاح', { to: lang })
         return res.status(200).json({
             status: true,
-            message: 'تم حذف الإشعار بنجاح',
+            message: message,
             code: 200,
             data: null
         });
     } catch (error) {
         console.error('Error deleting notification:', error);
+        let message=await translate('حدث خطأ أثناء حذف الإشعار', { to: lang })
         return res.status(500).json({
             status: false,
-            message: 'حدث خطأ أثناء حذف الإشعار',
+            message: message,
             code: 500,
             data: null
         });
