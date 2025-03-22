@@ -66,7 +66,7 @@ const getNotifications = async (req, res) => {
     let lang = req.query.lang || 'en';
     let limit = req.query.limit || 10;
     let page = req.query.page || 1;
-    let skip = (page - 1) * limit;
+    let skip = (+page - 1) * +limit;
     try {
         const { type, id } = req.params;
 
@@ -104,7 +104,7 @@ const getNotifications = async (req, res) => {
                 createdAt: 'desc'
             },
             skip,
-            take: limit
+            take: +limit
         }),
         prisma.notification.count({
             where: {
@@ -125,14 +125,14 @@ const getNotifications = async (req, res) => {
                 message
             }
         }));
-        const isNext = count > page * limit + notifications.length; 
+        const isNext = count > +page * +limit + notifications.length; 
         return res.status(200).json({
             status: true,
             message: message,
             code: 200,
             data: {
                 notifications:translateNotifications,
-                count, hasMore: isNext, nextPage: page + 1
+                count, hasMore: isNext, nextPage: +page + 1
             }
         });
     } catch (error) {
