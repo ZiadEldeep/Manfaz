@@ -137,9 +137,10 @@ const getNotifications = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching notifications:', error);
+        let message = await translate('حدث خطأ أثناء جلب الإشعارات', { to: lang });
         return res.status(500).json({
             status: false,
-            message: 'حدث خطأ أثناء جلب الإشعارات',
+            message:message+error,
             code: 500,
             data: null
         });
