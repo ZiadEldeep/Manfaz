@@ -125,13 +125,14 @@ const getNotifications = async (req, res) => {
                 message
             }
         }));
+        const isNext = count > page * limit + notifications.length; 
         return res.status(200).json({
             status: true,
             message: message,
             code: 200,
             data: {
                 notifications:translateNotifications,
-                count
+                count, hasMore: isNext, nextPage: page + 1
             }
         });
     } catch (error) {
