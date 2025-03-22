@@ -84,7 +84,8 @@ const getNotifications = async (req, res) => {
                 relatedId: id
             },
             include:{
-                sender:true
+                sender:true,
+                service:true
             },
             orderBy: {
                 createdAt: 'desc'
