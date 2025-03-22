@@ -115,14 +115,16 @@ const getNotifications = async (req, res) => {
         translate('تم جلب الإشعارات بنجاح', { to: lang })
         ]);
         let translateNotifications=await Promise.all(notifications.map(async (notification) => {
-            let [title,message] = await Promise.all([
+            let [title,message,serviceName] = await Promise.all([
                 translate(notification.title, { to: lang }),
-                translate(notification.message, { to: lang })
+                translate(notification.message, { to: lang }),
+                translate(notification.service.name||'', { to: lang })
             ]);
             return {
                 ...notification,
                 title,
-                message
+                message,
+                ...(notification.service?{service:{...notification.service,name:serviceName}}:{})
             }
         }));
         const isNext = count > +page * +limit + notifications.length; 
