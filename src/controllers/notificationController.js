@@ -51,7 +51,8 @@ const createNotification = async (req, res) => {
                 orderId,
                 senderId,
                 isRead: false
-            },include: {
+            },
+            include: {
                 sender: {
                   select: {
                     id: true,
