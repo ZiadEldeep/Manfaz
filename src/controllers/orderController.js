@@ -209,6 +209,7 @@ const createOrder = async (req, res) => {
           title: await translate('طلب خدمة جديد', { to: lang }),
           message: await translate(`لديك طلب خدمة جديد من ${user.name}`, { to: lang }),
           type: 'worker',
+          senderId: user.id,
           relatedId: provider.userId,
           isRead: false
         }
@@ -216,8 +217,8 @@ const createOrder = async (req, res) => {
 
       // إرسال الإشعار للعامل عبر Socket.IO
       if (req.io) {
-        req.io.to(`worker:${providerId}`).emit('newNotification', workerNotification);
-        req.io.to(`worker_${providerId}`).emit('newOrder', {
+        req.io.to(`worker:${ provider.userId}`).emit('newNotification', workerNotification);
+        req.io.to(`worker_${ provider.userId}`).emit('newOrder', {
           type: 'service',
           order: newOrder
         });
@@ -290,6 +291,7 @@ const createOrder = async (req, res) => {
             title: await translate('طلب توصيل جديد', { to: lang }),
             message: await translate(`لديك طلب توصيل جديد من ${user.name}`, { to: lang }),
             type: 'employee',
+            senderId: user.id,
             relatedId: employee.id,
             isRead: false
           }
@@ -420,6 +422,7 @@ const updateOrder = async (req, res) => {
               title: await translate('تم قبول طلبك', { to: lang }),
               message: await translate(`قام العامل ${order.provider.title} بقبول طلبك وجاري تنفيذه`, { to: lang }),
               type: 'user',
+              senderId: order.provider.userId,
               relatedId: order.userId,
               isRead: false
             }
@@ -438,6 +441,7 @@ const updateOrder = async (req, res) => {
               ),
               type: 'user',
               relatedId: order.userId,
+              senderId: order.provider.userId,
               isRead: false
             }
           });

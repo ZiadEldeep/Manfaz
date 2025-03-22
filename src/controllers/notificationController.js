@@ -63,7 +63,7 @@ const createNotification = async (req, res) => {
 
 // دالة جلب إشعارات مستخدم معين
 const getNotifications = async (req, res) => {
-    let lang = req.headers.lang || 'en';
+    let lang = req.query.lang || 'en';
     try {
         const { type, id } = req.params;
 
@@ -82,6 +82,9 @@ const getNotifications = async (req, res) => {
                 where: {
                     type,
                 relatedId: id
+            },
+            include:{
+                sender:true
             },
             orderBy: {
                 createdAt: 'desc'
