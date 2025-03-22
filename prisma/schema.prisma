@@ -134,7 +134,6 @@ model ServiceParameter {
 
   Order Order[]
 
-  Notification Notification[]
 }
 
 model Worker {
@@ -305,6 +304,8 @@ model Order {
   Review Review[]
 
   ScheduleOrder ScheduleOrder[]
+
+  Notification Notification[]
 }
 model ProductsOrder{
   id String @id @default(auto()) @map("_id") @db.ObjectId
@@ -755,7 +756,7 @@ model Notification {
   type        NotificationType
   relatedId   String     @db.ObjectId
   senderId    String    @db.ObjectId
-  serviceId   String    @db.ObjectId
+  orderId   String    @db.ObjectId
   isRead      Boolean    @default(false)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -764,7 +765,7 @@ model Notification {
   user        User?      @relation("UserNotifications",fields: [relatedId], references: [id])
   sender      User?      @relation("SenderNotifications",fields: [senderId], references: [id])
   employee    Employee?  @relation(fields: [relatedId], references: [id])
-  service     ServiceParameter?   @relation(fields: [serviceId], references: [id])
+  order       Order?     @relation(fields: [orderId], references: [id])
 }
 
 enum NotificationType {

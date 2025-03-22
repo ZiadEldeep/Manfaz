@@ -13,7 +13,9 @@ const initializeSocket = (io) => {
 
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
-
+    socket.on("newNotification", (data) => {
+      console.log(data);
+    })
     // الانضمام إلى غرفة إشعارات محددة
     socket.on('joinNotificationRoom', ({ type, id }) => {
       const room = `${type}:${id}`;
@@ -31,7 +33,7 @@ const initializeSocket = (io) => {
     // تسجيل المستخدم في الغرفة المناسبة
     socket.on('register', ({ type, id }) => {
       if (!id) return;
-
+      console.log("type",type,"id",id)
       // إزالة المستخدم من الغرف السابقة
       socket.rooms.forEach((room) => {
         if (room !== socket.id) {

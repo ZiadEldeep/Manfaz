@@ -293,6 +293,7 @@ const createOrder = async (req, res) => {
             message: await translate(`لديك طلب توصيل جديد من ${user.name}`, { to: lang }),
             type: 'employee',
             senderId: user.id,
+            orderId: newOrder.id,
             relatedId: employee.id,
             isRead: false
           }
