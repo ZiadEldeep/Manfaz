@@ -51,7 +51,24 @@ const createNotification = async (req, res) => {
                 orderId,
                 senderId,
                 isRead: false
-            }
+            },include: {
+                sender: {
+                  select: {
+                    id: true,
+                    name: true,
+                    imageUrl: true
+                  }
+                },
+                order:{
+                  select:{
+                    service:{
+                      select:{
+                        name:true
+                      }
+                    }
+                  }
+                }
+              }
         });
 
         // إرسال الإشعار عبر Socket.IO
