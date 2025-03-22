@@ -49,6 +49,11 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 
 // app.use((req, res, next) => {
 //     res.header("Access-Control-Allow-Origin", ['http://localhost:3000',"https://manfaz.vercel.app","https://manfaz-dashboard.vercel.app"]); 

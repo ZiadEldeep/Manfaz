@@ -7,10 +7,10 @@ const createNotification = async (req, res) => {
     
     try {
         let lang = req.headers.lang || 'en';
-        const { title, message, type, relatedId } = req.body;
+        const { title, message, type, relatedId, orderId,senderId } = req.body;
 
         // التحقق من صحة البيانات
-        if (!title || !message || !type || !relatedId) {
+        if (!title || !message || !type || !relatedId || !orderId || !senderId) {
             return res.status(400).json({
                 status: false,
                 message: 'جميع الحقول مطلوبة',
@@ -28,21 +28,39 @@ const createNotification = async (req, res) => {
                 data: null
             });
         }
-
+        let user = await prisma.user.findUnique({
+            where: {
+                id: relatedId
+            }
+        })  
+        if (!user) {
+            return res.status(404).json({
+                status: false,
+                message: 'المستخدم غير موجود',
+                code: 404,
+                data: null
+            });
+        }
         // إنشاء الإشعار في قاعدة البيانات
         const notification = await prisma.notification.create({
             data: {
                 title,
                 message,
                 type,
-                relatedId,
+                relatedId:user.id,
+                orderId,
+                senderId,
                 isRead: false
             }
         });
 
         // إرسال الإشعار عبر Socket.IO
-        const room = `${type}:${relatedId}`;
-        req.io.to(room).emit('newNotification', notification);
+        const room = `${type}_${relatedId}`;
+        if (req.io) {
+            req.io.to(room).emit('newNotification', notification);
+        }else{
+            console.log('Socket.IO not connected');
+        }
 
         return res.status(201).json({
             status: true,
@@ -183,8 +201,8 @@ const markAsRead = async (req, res) => {
 
 // دالة حذف إشعار
 const deleteNotification = async (req, res) => {
+    const lang = req.query.lang || 'en';
     try {
-        const lang = req.query.lang || 'en';
         const { id } = req.params;
 
         await prisma.notification.delete({

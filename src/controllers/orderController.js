@@ -218,7 +218,7 @@ const createOrder = async (req, res) => {
 
       // إرسال الإشعار للعامل عبر Socket.IO
       if (req.io) {
-        req.io.to(`worker:${ provider.userId}`).emit('newNotification', workerNotification);
+        req.io.to(`worker_${ provider.userId}`).emit('newNotification', workerNotification);
         req.io.to(`worker_${ provider.userId}`).emit('newOrder', {
           type: 'service',
           order: newOrder
@@ -301,7 +301,7 @@ const createOrder = async (req, res) => {
 
         // إرسال الإشعار للموظف عبر Socket.IO
         if (req.io) {
-          req.io.to(`employee:${employee.id}`).emit('newNotification', employeeNotification);
+          req.io.to(`employee_${employee.id}`).emit('newNotification', employeeNotification);
         }
       }
 
@@ -492,7 +492,7 @@ const updateOrder = async (req, res) => {
             }
           });
 
-          req.io.to(`employee:${employee.id}`).emit('newNotification', employeeNotification);
+          req.io.to(`employee_${employee.id}`).emit('newNotification', employeeNotification);
         }
 
         req.io.to(`user_${order.userId}`).emit('newNotification', userNotification);

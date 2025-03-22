@@ -28,11 +28,9 @@ const initializeSocket = (io) => {
       switch (type) {
         case 'user':
           socket.join(`user_${id}`);
-          socket.join(`user:${id}`); // غرفة الإشعارات
           break;
         case 'worker':
           socket.join(`worker_${id}`);
-          socket.join(`worker:${id}`); // غرفة الإشعارات
           break;
         case 'store':
           socket.join(`store_${id}`);
@@ -41,17 +39,13 @@ const initializeSocket = (io) => {
           socket.join('admin');
           break;
         case 'employee':
-          socket.join(`employee:${id}`); // غرفة الإشعارات
+          socket.join(`employee_${id}`);
           break;
       }
   
       connectedUsers.set(socket.id, { type, id });
-      console.log(`${type} ${id} registered`);
-      console.log(`User of type ${type} with ID ${id} joined room ${type}:${id}`);
+      console.log(`User of type ${type} with ID ${id} joined room ${type}_${id}`);
     });
-    socket.on("newNotification", (data) => {
-      console.log(data);
-    })
     // الانضمام إلى غرفة إشعارات محددة
     socket.on('joinNotificationRoom', ({ type, id }) => {
       const room = `${type}:${id}`;
