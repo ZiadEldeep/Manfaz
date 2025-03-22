@@ -94,9 +94,16 @@ const getNotifications = async (req, res) => {
                         imageUrl:true
                     }
                 },
-                service:{
+                order:{
                     select:{
-                        name:true
+                        id:true
+                    },
+                    include:{
+                        service:{
+                            select:{
+                                name:true
+                            }
+                        }
                     }
                 }
             },
@@ -118,13 +125,13 @@ const getNotifications = async (req, res) => {
             let [title,message,serviceName] = await Promise.all([
                 translate(notification.title, { to: lang }),
                 translate(notification.message, { to: lang }),
-                translate(notification.service.name||'', { to: lang })
+                translate(notification.order?.service?.name||'', { to: lang })
             ]);
             return {
                 ...notification,
                 title,
                 message,
-                ...(notification.service?{service:{...notification.service,name:serviceName}}:{})
+                ...(notification.order?{order:{...notification.order,service:{...notification.service,name:serviceName}}}:{})
             }
         }));
         const isNext = count > +page * +limit + notifications.length; 
