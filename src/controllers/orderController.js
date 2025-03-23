@@ -23,15 +23,21 @@ const getAllOrders = async (req, res) => {
       statusCondition = { status: status };
     }
     let dateCondition = {};
-    if (date) {
+    if (date && date !=="undefined") {
       dateCondition = { createdAt: { gte: new Date(date),lte: endOfDay(new Date(date)) },updatedAt: { gte: new Date(date),lte: endOfDay(new Date(date)) } };
     }
     let paymentStatusCondition = {};
     if (paymentStatus) {
       paymentStatusCondition = { paymentStatus: paymentStatus };
     }
+    let user=role==='user'?await prisma.user.findUnique({where:{id:userId}}):role==='worker'?await prisma.worker.findFirst({where:{userId}}):null
+    if(!user){
+      let message=await translate(role==='user'?'User not found':role==='worker'?'Worker not found':'Delivery driver not found', { to: lang })
+      return res.status(404).json({ message,status: false, data: null,code:404 });
+    }
+
     const whereCondition =
-      role === 'user' ? { userId } : role === 'worker' ? { provider: { userId } } : { deliveryDriver: { userId } }
+      role === 'user' ? { userId:user.id } : role === 'worker' ? { providerId:user.id } : { deliveryDriverId:user.id }
 
     const orders = await prisma.order.findMany({
       orderBy: [
@@ -368,6 +374,7 @@ const createOrder = async (req, res) => {
     });
   } catch (error) {
     const message = await translate(error.message, { to: lang });
+    console.log(message);
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
