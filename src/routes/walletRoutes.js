@@ -28,7 +28,7 @@ router.get('/:id/transactions', getWalletTransactions);
 router.post('/:id/transactions', createTransaction);
 router.put('/:id/transactions/:id', updateTransactionStatus);
 router.delete('/:id/transactions/:id', deleteTransaction);
-router.get('/:userId/transactions/user', getWalletTransactionsUser);
+router.get('/:walletId/transactions/user', getWalletTransactionsUser);
 router.post('/:id/add-balance', addBalance);
 router.post('/:id/deduct-balance', deductBalance);
 router.get('/:userId/user', getUserWallet);

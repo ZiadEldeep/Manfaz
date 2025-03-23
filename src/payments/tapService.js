@@ -162,9 +162,21 @@ class TapService {
 
     async createWalletWithdrawal(userId, amount) {
         try {
+            let user = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+
+            if (!user) {
+                let message = await translate('User not found');
+                return {
+                    success: false,
+                    message: message
+                };
+            }
+
             // التحقق من رصيد المحفظة
             const wallet = await prisma.wallet.findUnique({
-                where: { userId }
+                where: { userId: user.id }
             });
 
             if (!wallet || wallet.balance < amount) {
@@ -177,7 +189,7 @@ class TapService {
             // إنشاء معاملة جديدة
             const transaction = await prisma.transaction.create({
                 data: {
-                    walletId: userId,
+                    walletId: wallet.id,
                     type: 'withdrawal',
                     amount: amount,
                     status: 'pending'
@@ -188,9 +200,9 @@ class TapService {
             const paymentData = {
                 amount: amount,
                 description: `سحب رصيد من المحفظة - ${transaction.id}`,
-                customerName: 'عميل منفاز',
-                customerEmail: 'customer@manfaz.com',
-                customerPhone: '+966500000000',
+                customerName: 'عميل منفذ',
+                customerEmail: user.email,
+                customerPhone: user.phone,
                 sourceId: 'src_all',
                 redirectUrl: `${process.env.FRONTEND_URL}/wallet/callback?transactionId=${transaction.id}`,
                 transactionId: transaction.id,

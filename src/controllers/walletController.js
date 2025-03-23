@@ -618,7 +618,7 @@ const deductBalance = async (req, res) => {
 const getWalletTransactionsUser = async (req, res) => {
   const lang = req.query.lang || 'ar';
   try {
-    const { userId } = req.params;
+    const { walletId } = req.params;
     const { page = 1, limit = 10, startDate, endDate } = req.query;
 
     const skip = (page - 1) * limit;
@@ -632,12 +632,12 @@ const getWalletTransactionsUser = async (req, res) => {
         }
       };
     }
-    let user = await prisma.user.findUnique({
+    let wallet = await prisma.wallet.findUnique({
       where: {
-        id: userId
+        id: walletId
       }
     })
-    if (!user) {
+    if (!wallet) {
       return res.status(404).json({
         status: false,
         message: await translate('User not found', { to: lang }),
@@ -648,7 +648,7 @@ const getWalletTransactionsUser = async (req, res) => {
     const [transactions, total] = await prisma.$transaction([
       prisma.transaction.findMany({
         where: {
-          userId: user.id,
+          walletId: wallet.id,
           ...dateFilter
         },
         orderBy: {
