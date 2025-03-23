@@ -659,7 +659,7 @@ const getWalletTransactionsUser = async (req, res) => {
       }),
       prisma.transaction.count({
         where: {
-          userId,
+          userId: user.id,
           ...dateFilter
         }
       })
