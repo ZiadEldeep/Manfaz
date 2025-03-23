@@ -24,6 +24,7 @@ const employeeActivitiesRoutes = require('./routes/employeeActivitiesRoutes.js')
 const dashboardRoutes = require('./routes/dashboardRoutes.js');
 const notificationRoutes = require('./routes/notificationRoutes.js');
 const paymentRoutes = require('./routes/paymentRoutes.js');
+const walletRoutes = require('./routes/walletRoutes.js');
 
 const app = express();
 const httpServer = createServer(app);
@@ -82,7 +83,7 @@ app.use('/employees-activities', employeeActivitiesRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/payments', paymentRoutes);
-
+app.use('/wallets', walletRoutes);
 // معالجة الأخطاء
 app.use((err, req, res, next) => {
   console.error(err.stack);
