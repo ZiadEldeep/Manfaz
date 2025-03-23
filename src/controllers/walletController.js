@@ -488,7 +488,7 @@ const addBalance = async (req, res) => {
           balance: amount
         }
       }),
-      prisma.walletTransaction.create({
+      prisma.transaction.create({
         data: {
           userId,
           amount,
@@ -569,7 +569,7 @@ const deductBalance = async (req, res) => {
           }
         }
       }),
-      prisma.walletTransaction.create({
+      prisma.transaction.create({
         data: {
           userId,
           amount: -amount,
@@ -646,7 +646,7 @@ const getWalletTransactionsUser = async (req, res) => {
       });
     }
     const [transactions, total] = await prisma.$transaction([
-      prisma.walletTransaction.findMany({
+      prisma.transaction.findMany({
         where: {
           userId: user.id,
           ...dateFilter
@@ -657,7 +657,7 @@ const getWalletTransactionsUser = async (req, res) => {
         skip,
         take: parseInt(limit)
       }),
-      prisma.walletTransaction.count({
+      prisma.transaction.count({
         where: {
           userId,
           ...dateFilter
