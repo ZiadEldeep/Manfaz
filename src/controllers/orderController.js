@@ -31,13 +31,13 @@ const getAllOrders = async (req, res) => {
       paymentStatusCondition = { paymentStatus: paymentStatus };
     }
     let user=role==='user'?await prisma.user.findUnique({where:{id:userId}}):role==='worker'?await prisma.worker.findFirst({where:{userId}}):null
-    if(!user){
+    if(!user && !role){
       let message=await translate(role==='user'?'User not found':role==='worker'?'Worker not found':'Delivery driver not found', { to: lang })
       return res.status(404).json({ message,status: false, data: null,code:404 });
     }
 
     const whereCondition =
-      role === 'user' ? { userId:user.id } : role === 'worker' ? { providerId:user.id } : { deliveryDriverId:user.id }
+      role === 'user' ? { userId:user.id } : role === 'worker' ? { providerId:user.id } : role === 'delivery driver' ? { deliveryDriverId:user.id } : {}
 
     const orders = await prisma.order.findMany({
       orderBy: [
