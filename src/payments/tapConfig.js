@@ -14,5 +14,3 @@ const tapConfig = {
 };
 
 module.exports = tapConfig; 
-// TAP_SECRET_KEY=your_secret_key
-// TAP_MERCHANT_ID=your_merchant_id
