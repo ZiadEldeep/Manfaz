@@ -28,7 +28,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:3000', "http://manfaz.vercel.app/", "https://manfaz-dashboard.vercel.app/"],
+    origin: ['http://localhost:3000', "http://manfaz.vercel.app", "https://manfaz-dashboard.vercel.app"],
     methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
