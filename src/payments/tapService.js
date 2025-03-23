@@ -1,6 +1,7 @@
 const axios = require('axios');
 const tapConfig = require('./tapConfig');
 const prisma = require('../prismaClient');
+const translate = require('../translate');
 
 class TapService {
     constructor() {
@@ -83,10 +84,24 @@ class TapService {
 
     async createWalletDeposit(userId, amount) {
         try {
+            const user = await prisma.user.findUnique({
+                where: {
+                    id: userId
+                }
+            });
+
+            if (!user) {
+                let message = await translate('User not found');
+                return {
+                    success: false,
+                    message: message
+                };
+            }
+
             // إنشاء معاملة جديدة في قاعدة البيانات
             const transaction = await prisma.transaction.create({
                 data: {
-                    walletId: userId,
+                    walletId: user.id,
                     type: 'deposit',
                     amount: amount,
                     status: 'pending'
@@ -97,9 +112,9 @@ class TapService {
             const paymentData = {
                 amount: amount,
                 description: `شحن رصيد للمحفظة - ${transaction.id}`,
-                customerName: 'عميل منفاز',
-                customerEmail: 'customer@manfaz.com',
-                customerPhone: '+966500000000',
+                customerName: 'عميل منفذ',
+                customerEmail: user.email,
+                customerPhone: user.phone,
                 sourceId: 'src_all', // يمكن تغييره حسب طريقة الدفع المطلوبة
                 redirectUrl: `${process.env.FRONTEND_URL}/wallet/callback?transactionId=${transaction.id}`,
                 transactionId: transaction.id,
@@ -619,6 +634,28 @@ class TapService {
                 success: true,
                 data: transaction
             };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+    webhook(body) {
+        try {
+            const result = this.retrievePayment(body.metadata.payout_id);
+            
+            if (result.success) {
+                return {
+                    success: true,
+                    data: result.data
+                };
+            } else {
+                return {
+                    success: false,
+                    error: result.error
+                };
+            }
         } catch (error) {
             return {
                 success: false,

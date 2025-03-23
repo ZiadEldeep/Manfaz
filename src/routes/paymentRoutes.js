@@ -42,6 +42,51 @@ router.post('/create-payment', authenticateToken, async (req, res) => {
         });
     }
 });
+router.post("/webhook",async (req, res) => {
+    const body = req.body;
+    try {
+        
+  // Tap سترسل لك status: CAPTURED أو PAID
+  if (body.status === 'CAPTURED' || body.status === 'PAID') {
+    const userId = body.metadata?.userId;
+    const amount = body.amount;
+
+    if (userId && amount) {
+        let user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                status: false,
+                message: 'المستخدم غير موجود',
+                code: 404,
+                data: null
+            });
+        }
+
+        await prisma.wallet.update({
+          where: { userId },
+          data: { balance: { increment: amount } },
+        });
+    }
+  }else{
+    return res.status(400).json({
+        status: false,
+        message: 'الحالة غير صحيحة',
+        code: 400,
+        data: null
+    });
+  }
+
+    } catch (error) {
+        res.status(500).json({
+            status: false,
+            message: 'حدث خطأ في الخادم',
+            error: error.message
+        });
+    }
+})
 
 // استرجاع معلومات عملية دفع
 router.get('/payment/:chargeId', authenticateToken, async (req, res) => {
@@ -100,8 +145,8 @@ router.post('/refund/:chargeId', authenticateToken, async (req, res) => {
 // شحن رصيد للمحفظة
 router.post('/wallet/deposit', authenticateToken, async (req, res) => {
     try {
-        const { amount } = req.body;
-        const userId = req.user.id;
+        const { amount,userId } = req.body;
+        // const userId = req.user.id;
 
         if (!amount || amount <= 0) {
             return res.status(400).json({
