@@ -199,7 +199,7 @@ router.post('/wallet/withdraw', authenticateToken, async (req, res) => {
             });
         }
 
-        const result = await tapService.createWalletWithdrawal(userId, amount);
+        const result = await paypalService.createWorkerPayout(userId, amount);
         
         if (result.success) {
             res.json({

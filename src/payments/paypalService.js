@@ -12,17 +12,17 @@ class PayPalService {
     }
 
     // إنشاء عملية سحب للعامل
-    async createWorkerPayout(workerId, amount, email) {
+    async createWorkerPayout(userId, amount) {
         try {
             // التحقق من وجود العامل
-            const worker = await prisma.worker.findUnique({
-                where: { id: workerId },
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
                 include: {
-                    user: true
+                    worker: true
                 }
             });
 
-            if (!worker) {
+            if (!user) {
                 return {
                     success: false,
                     error: 'العامل غير موجود'
@@ -31,12 +31,12 @@ class PayPalService {
 
             // التحقق من رصيد العامل
             const earnings = await prisma.earning.findMany({
-                where: { workerId },
+                where: { workerId: user.worker.id },
                 select: { amount: true }
             });
 
             const totalEarnings = earnings.reduce((sum, earning) => sum + earning.amount, 0);
-            const availableBalance = totalEarnings - worker.totalEarned;
+            const availableBalance = totalEarnings - user.worker.totalEarned;
 
             if (availableBalance < amount) {
                 return {
@@ -49,7 +49,7 @@ class PayPalService {
             const payoutData = {
                 sender_batch_header: {
                     sender_batch_id: `BATCH_${Date.now()}`,
-                    email_subject: "تم سحب رصيدك من منفاز",
+                    email_subject: "تم سحب رصيدك من منفذ",
                     email_message: "تم إرسال رصيدك بنجاح"
                 },
                 items: [{
@@ -58,8 +58,8 @@ class PayPalService {
                         value: amount.toString(),
                         currency: paypalConfig.currency
                     },
-                    receiver: email,
-                    note: `سحب رصيد للعامل ${worker.user.name}`,
+                    receiver: user.email,
+                    note: `سحب رصيد للعامل ${user.name}`,
                     sender_item_id: `ITEM_${Date.now()}`
                 }]
             };
