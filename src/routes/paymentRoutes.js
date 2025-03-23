@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const tapService = require('../payments/tapService');
 const paypalService = require('../payments/paypalService');
-const { authenticateToken } = require('../middleware/auth');
+const  authenticateToken  = require('../middleware/authMiddleware');
 
 // إنشاء عملية دفع جديدة
 router.post('/create-payment', authenticateToken, async (req, res) => {
