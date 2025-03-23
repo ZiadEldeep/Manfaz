@@ -414,7 +414,7 @@ const getUserWallet = async (req, res) => {
       const message = await translate('User not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
-    const wallet = await prisma.wallet.findUnique({
+    const wallet = await prisma.wallet.findFirst({
       where: { userId: user.id },
       include: {
         transactions: {
