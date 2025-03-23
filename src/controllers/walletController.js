@@ -407,9 +407,15 @@ const getUserWallet = async (req, res) => {
   const lang = req.query.lang || 'ar';
   try {
     const { userId } = req.params;
-
+    let user = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+    if (!user) {
+      const message = await translate('User not found', { to: lang });
+      return res.status(404).json({ status: false, message, code: 404, data: null });
+    }
     const wallet = await prisma.wallet.findUnique({
-      where: { userId },
+      where: { userId: user.id },
       include: {
         transactions: {
           orderBy: {
@@ -626,11 +632,23 @@ const getWalletTransactionsUser = async (req, res) => {
         }
       };
     }
-
+    let user = await prisma.user.findUnique({
+      where: {
+        id: userId
+      }
+    })
+    if (!user) {
+      return res.status(404).json({
+        status: false,
+        message: await translate('User not found', { to: lang }),
+        code: 404,
+        data: null
+      });
+    }
     const [transactions, total] = await prisma.$transaction([
       prisma.walletTransaction.findMany({
         where: {
-          userId,
+          userId: user.id,
           ...dateFilter
         },
         orderBy: {
