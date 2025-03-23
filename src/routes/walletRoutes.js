@@ -28,10 +28,10 @@ router.get('/:id/transactions', getWalletTransactions);
 router.post('/:id/transactions', createTransaction);
 router.put('/:id/transactions/:id', updateTransactionStatus);
 router.delete('/:id/transactions/:id', deleteTransaction);
-router.get('/:id/transactions/user', getWalletTransactionsUser);
+router.get('/:userId/transactions/user', getWalletTransactionsUser);
 router.post('/:id/add-balance', addBalance);
 router.post('/:id/deduct-balance', deductBalance);
-router.get('/:id/user', getUserWallet);
+router.get('/:userId/user', getUserWallet);
 module.exports = router;
 
 
