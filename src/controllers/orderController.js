@@ -389,7 +389,18 @@ const getOrderById = async (req, res) => {
       include: {
         user: true,
         service: true,
-        provider: true,
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true,
+                phone: true
+              }
+            }
+          }
+        },
         store: true,
       }
     });
