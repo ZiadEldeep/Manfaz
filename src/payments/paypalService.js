@@ -1,14 +1,14 @@
-const paypal = require('@paypal/checkout-server-sdk');
+const paypalPayouts = require('@paypal/payouts-sdk');
 const paypalConfig = require('./paypalConfig');
 const prisma = require('../prismaClient');
 
 class PayPalService {
     constructor() {
         const environment = paypalConfig.mode === 'live'
-            ? new paypal.core.LiveEnvironment(paypalConfig.clientId, paypalConfig.clientSecret)
-            : new paypal.core.SandboxEnvironment(paypalConfig.clientId, paypalConfig.clientSecret);
+        ? new paypalPayouts.core.LiveEnvironment(paypalConfig.clientId, paypalConfig.clientSecret)
+        : new paypalPayouts.core.SandboxEnvironment(paypalConfig.clientId, paypalConfig.clientSecret);
         
-        this.client = new paypal.core.PayPalHttpClient(environment);
+        this.client = new paypalPayouts.core.PayPalHttpClient(environment);
     }
 
     // إنشاء عملية سحب للعامل
@@ -18,7 +18,7 @@ class PayPalService {
             const user = await prisma.user.findUnique({
                 where: { id: userId },
                 include: {
-                    worker: true
+                    Worker: true
                 }
             });
 
@@ -30,13 +30,16 @@ class PayPalService {
             }
 
             // التحقق من رصيد العامل
-            const earnings = await prisma.earning.findMany({
-                where: { workerId: user.worker.id },
+            const earnings = user.role === 'worker' ? await prisma.earning.findMany({
+                where: { workerId: user.Worker?.[0]?.id },
                 select: { amount: true }
+            }):await prisma.wallet.findFirst({
+                where: { userId: user.id },
+                select: { balance: true }
             });
 
-            const totalEarnings = earnings.reduce((sum, earning) => sum + earning.amount, 0);
-            const availableBalance = totalEarnings - user.worker.totalEarned;
+            const totalEarnings = user.role === 'worker' ? earnings.reduce((sum, earning) => sum + earning.amount, 0):earnings.balance;
+            const availableBalance = user.role === 'worker' ? totalEarnings - user.Worker?.[0]?.totalEarned:totalEarnings;
 
             if (availableBalance < amount) {
                 return {
@@ -64,20 +67,32 @@ class PayPalService {
                 }]
             };
 
-            const request = new paypal.payouts.PayoutsPostRequest();
+            const request = new paypalPayouts.payouts.PayoutsPostRequest();
             request.requestBody(payoutData);
 
             const response = await this.client.execute(request);
-
-            // تحديث رصيد العامل
-            await prisma.worker.update({
-                where: { id: workerId },
+            if (user.role === 'worker') {
+                
+                // تحديث رصيد العامل
+                await prisma.worker.update({
+                where: { id: user.Worker?.[0]?.id },
                 data: {
                     totalEarned: {
                         increment: amount
                     }
                 }
             });
+        } else {
+            // تحديث رصيد المحفظة
+            await prisma.wallet.update({
+                where: { id: user?.id },
+                data: {
+                    balance: {
+                        increment: amount
+                    }
+                }
+            });
+        }
 
             // إنشاء سجل المعاملة
             await prisma.transaction.create({
@@ -110,7 +125,7 @@ class PayPalService {
     // التحقق من حالة سحب العامل
     async getWorkerPayoutStatus(payoutId) {
         try {
-            const request = new paypal.payouts.PayoutsGetRequest(payoutId);
+            const request = new paypalPayouts.payouts.PayoutsGetRequest(payoutId);
             const response = await this.client.execute(request);
             
             // تحديث حالة المعاملة في قاعدة البيانات

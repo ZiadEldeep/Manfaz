@@ -187,8 +187,8 @@ router.post('/wallet/deposit', authenticateToken, async (req, res) => {
 // سحب رصيد من المحفظة
 router.post('/wallet/withdraw', authenticateToken, async (req, res) => {
     try {
-        const { amount } = req.body;
-        const userId = req.user.id;
+        const { amount ,userId} = req.body;
+    
 
         if (!amount || amount <= 0) {
             return res.status(400).json({
