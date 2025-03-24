@@ -30,7 +30,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:3000', "https://manfaz.vercel.app", "https://manfaz-dashboard.vercel.app"],
+    origin: ['http://localhost:3000', "https://manfaz.vercel.app", "https://manfaz-dashboard.vercel.app","https://www.almanafth.com","https://dashboard.almanafth.com"],
     methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
@@ -42,7 +42,7 @@ initializeSocket(io);
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000',"https://manfaz.vercel.app","https://manfaz-dashboard.vercel.app"], // Allow requests from this origin
+    origin: ['http://localhost:3000',"https://manfaz.vercel.app","https://manfaz-dashboard.vercel.app","https://www.almanafth.com","https://dashboard.almanafth.com"], // Allow requests from this origin
     methods: ['GET', 'POST', 'PUT', 'DELETE',"PATCH"], // Specify allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
