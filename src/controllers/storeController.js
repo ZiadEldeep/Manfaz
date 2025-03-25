@@ -643,14 +643,14 @@ const getAllStoreCategories = async (req, res) => {
   let page = req.query.page || 1;
   let offset = (page - 1) * limit;
   let search = req.query.search || '';
-  let categoryId = req.query.categoryId || '23456789rertyui98765457898765ertyu765678';
+  let categoryId = req.query.categoryId || '';
   try {
     let searchTranslated = search ? await translate(search, { to: lang }) : '';
     let searchQuery = search ? { OR: [{ name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }, { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }] } : {};
     const categories = await prisma.storeCategory.findMany({
-      where: {...searchQuery,store:{
+      where: {...searchQuery,...(categoryId ? {store:{
         categoryId
-      }},
+      }} : {} )},
       skip: offset,
       take: +limit
     });
