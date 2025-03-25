@@ -616,7 +616,7 @@ const deductBalance = async (req, res) => {
 
 // الحصول على معاملات المحفظة
 const getWalletTransactionsUser = async (req, res) => {
-  const lang = req.query.lang || 'ar';
+  const lang = req.query.lang || 'en';
   try {
     const { walletId } = req.params;
     const { page = 1, limit = 10, startDate, endDate } = req.query;
@@ -638,9 +638,10 @@ const getWalletTransactionsUser = async (req, res) => {
       }
     })
     if (!wallet) {
+      const message = await translate('Wallet not found', { to: lang });
       return res.status(404).json({
         status: false,
-        message: await translate('User not found', { to: lang }),
+        message,
         code: 404,
         data: null
       });
