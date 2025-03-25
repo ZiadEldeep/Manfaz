@@ -648,7 +648,7 @@ const getAllStoreCategories = async (req, res) => {
     let searchTranslated = search ? await translate(search, { to: lang }) : '';
     let searchQuery = search ? { OR: [{ name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }, { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }] } : {};
     const categories = await prisma.storeCategory.findMany({
-      where: {...searchQuery,...(categoryId ? {store:{
+      where: {...searchQuery,...(categoryId && categoryId !=="undefined" ? {store:{
         categoryId
       }} : {} )},
       skip: offset,
@@ -675,6 +675,7 @@ const getAllStoreCategories = async (req, res) => {
       data: translatedCategories
     });
   } catch (error) {
+    console.log(error);
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
