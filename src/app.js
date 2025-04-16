@@ -4,6 +4,8 @@ const cookieParser = require('cookie-parser');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const initializeSocket = require('./socket');
+const path = require('path');
+
 // Import Routes
 const userRoutes = require('./routes/userRoutes');
 const authAdminRoutes = require('./routes/authAdminRoutes.js');
@@ -41,7 +43,7 @@ const options = {
       },
     ],
   },
-  apis: ['./routes/*.js'], // هنا بتحط مكان ملفات الراوت اللي هتكتب فيها توثيق Swagger
+  apis: [path.join(__dirname, './routes/*.js')],
 };
 const swaggerSpec = swaggerJsDoc(options);
 const app = express();
