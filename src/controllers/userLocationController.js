@@ -82,8 +82,8 @@ const createUserLocation = async (req, res) => {
       isDefault
     } = req.body;
 
-    if (!name || !address || !city || !latitude || !longitude) {
-      const message = await translate('Name, address, city, latitude and longitude are required', { to: lang });
+    if (!address || !latitude || !longitude || !type) {
+      const message = await translate('Address, latitude and longitude and type are required', { to: lang });
       return res.status(400).json({ status: false, message, code: 400, data: null });
     }
 

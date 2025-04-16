@@ -4,7 +4,6 @@ const cookieParser = require('cookie-parser');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const initializeSocket = require('./socket');
-
 // Import Routes
 const userRoutes = require('./routes/userRoutes');
 const authAdminRoutes = require('./routes/authAdminRoutes.js');
@@ -25,13 +24,32 @@ const dashboardRoutes = require('./routes/dashboardRoutes.js');
 const notificationRoutes = require('./routes/notificationRoutes.js');
 const paymentRoutes = require('./routes/paymentRoutes.js');
 const walletRoutes = require('./routes/walletRoutes.js');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Manfaz API Documentation',
+      version: '1.0.0',
+      description: 'توثيق لجميع المسارات الخاصة بمشروع منصة منفذ',
+    },
+    servers: [
+      {
+        url: 'http://localhost:3003',
+      },
+    ],
+  },
+  apis: ['./routes/*.js'], // هنا بتحط مكان ملفات الراوت اللي هتكتب فيها توثيق Swagger
+};
+const swaggerSpec = swaggerJsDoc(options);
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:3000', "https://manfaz.vercel.app", "https://manfaz-dashboard.vercel.app","https://www.almanafth.com","https://dashboard.almanafth.com"],
-    methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
+    origin: ['http://localhost:3000', "https://manfaz.vercel.app", "https://manfaz-dashboard.vercel.app", "https://www.almanafth.com", "https://dashboard.almanafth.com"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
   }
@@ -42,10 +60,10 @@ initializeSocket(io);
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000',"https://manfaz.vercel.app","https://manfaz-dashboard.vercel.app","https://www.almanafth.com","https://dashboard.almanafth.com"], // Allow requests from this origin
-    methods: ['GET', 'POST', 'PUT', 'DELETE',"PATCH"], // Specify allowed methods
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+  origin: ['http://localhost:3000', "https://manfaz.vercel.app", "https://manfaz-dashboard.vercel.app", "https://www.almanafth.com", "https://dashboard.almanafth.com"], // Allow requests from this origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', "PATCH"], // Specify allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 app.use(express.json());
@@ -84,6 +102,7 @@ app.use("/dashboard", dashboardRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/wallets', walletRoutes);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // معالجة الأخطاء
 app.use((err, req, res, next) => {
   console.error(err.stack);
