@@ -11,22 +11,112 @@ const getAllStores = async (req, res) => {
   let search = req.query.search || '';
   let categoryId = req.query.categoryId || '';
   let filter = req.query.filter || '';
+  let longitude = parseFloat(req.query.longitude);
+  let latitude = parseFloat(req.query.latitude);
+  let maxDistance = 10; // 10 كيلومتر
 
   try {
     let searchTranslated = search ? await translate(search, { to: 'en' }) : '';
-    let searchQuery = search ? {AND: [{
-      OR: [
-        { name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
-        { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
-        { type: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
-        { address: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }
-      ]},
-      filter.length > 0?{categories:{
-  some:{id:filter}
-}}:{}
-   ] } : filter.length > 0?{categories:{
-    some:{id:filter}
-  }}:{};
+    let searchQuery = search ? {
+      AND: [{
+        OR: [
+          { name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
+          { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
+          { type: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } },
+          { address: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }
+        ]
+      },
+      filter.length > 0 ? {
+        categories: {
+          some: { id: filter }
+        }
+      } : {}
+      ]
+    } : filter.length > 0 ? {
+      categories: {
+        some: { id: filter }
+      }
+    } : {};
+
+    // فلترة حسب المسافة إذا تم توفير الإحداثيات
+    if (longitude && latitude) {
+      const stores = await prisma.store.findMany({
+        where: categoryId ? { ...searchQuery, categoryId } : searchQuery,
+        include: {
+          category: true,
+          locations: true,
+          workingHours: true
+        }
+      });
+
+      // حساب المسافة لكل متجر
+      const storesWithDistance = stores.filter(store => {
+        if (!store.locations || store.locations.length === 0) return false;
+
+        // حساب المسافة لكل موقع من مواقع المتجر
+        const distances = store.locations.map(location => {
+          const R = 6371; // نصف قطر الأرض بالكيلومتر
+          const dLat = (location.latitude - latitude) * Math.PI / 180;
+          const dLon = (location.longitude - longitude) * Math.PI / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(latitude * Math.PI / 180) * Math.cos(location.latitude * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distance = R * c;
+          return distance;
+        });
+
+        // إرجاع المتجر إذا كان أي من مواقعه ضمن المسافة المطلوبة
+        return Math.min(...distances) <= maxDistance;
+      });
+
+      // تطبيق التقسيم إلى صفحات
+      const paginatedStores = storesWithDistance.slice(offset, offset + limit);
+
+      // ترجمة بيانات المتاجر
+      const translatedStores = await Promise.all(paginatedStores.map(async (store) => {
+        const [
+          translatedName,
+          translatedDescription,
+          translatedType,
+          translatedAddress,
+          translatedCategoryName
+        ] = await Promise.all([
+          translate(store.name, { to: lang }),
+          store.description ? translate(store.description, { to: lang }) : null,
+          translate(store.type, { to: lang }),
+          translate(store.address, { to: lang }),
+          store.category ? translate(store.category.name, { to: lang }) : null
+        ]);
+
+        return {
+          ...store,
+          name: translatedName,
+          description: translatedDescription,
+          type: translatedType,
+          address: translatedAddress,
+          category: store.category ? {
+            ...store.category,
+            name: translatedCategoryName
+          } : null
+        };
+      }));
+
+      const message = await translate('Stores retrieved successfully', { to: lang });
+      res.status(200).json({
+        status: true,
+        message,
+        code: 200,
+        data: {
+          stores: translatedStores,
+          totalStores: storesWithDistance.length,
+          currentPage: page,
+          totalPages: Math.ceil(storesWithDistance.length / limit)
+        }
+      });
+      return;
+    }
 
     const [stores, totalStores] = await Promise.all([
       prisma.store.findMany({
@@ -304,7 +394,7 @@ const createStoreProduct = async (req, res) => {
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
 };
-const getStoreProductById=async (req,res)=>{
+const getStoreProductById = async (req, res) => {
   const lang = req.query.lang || 'ar';
   try {
     const { id } = req.params;
@@ -321,7 +411,7 @@ const getStoreProductById=async (req,res)=>{
       const message = await translate('Product not found', { to: lang });
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
-    if(lang==="en"){
+    if (lang === "en") {
       return res.status(200).json({
         status: true,
         message: 'Product found successfully',
@@ -648,9 +738,13 @@ const getAllStoreCategories = async (req, res) => {
     let searchTranslated = search ? await translate(search, { to: lang }) : '';
     let searchQuery = search ? { OR: [{ name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }, { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }] } : {};
     const categories = await prisma.storeCategory.findMany({
-      where: {...searchQuery,...(categoryId && categoryId !=="undefined" ? {store:{
-        categoryId
-      }} : {} )},
+      where: {
+        ...searchQuery, ...(categoryId && categoryId !== "undefined" ? {
+          store: {
+            categoryId
+          }
+        } : {})
+      },
       skip: offset,
       take: +limit
     });

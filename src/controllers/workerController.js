@@ -4,22 +4,97 @@ const { addDays, startOfMonth, endOfMonth } = require("date-fns");
 // Get All Workers
 const getAllWorkers = async (req, res) => {
   const lang = req.query.lang || 'en';
-  let {categoryId}=req.query;
+  let { categoryId, longitude, latitude } = req.query;
+  let maxDistance = 10; // 10 كيلومتر
+
   try {
-    const workers = await prisma.worker.findMany({where:categoryId? {
-      WorkerCategory:{
-        some:{
-          categoryId
+    const workers = await prisma.worker.findMany({
+      where: categoryId ? {
+        WorkerCategory: {
+          some: {
+            categoryId
+          }
+        }
+      } : {},
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            locations: true,
+            imageUrl: true
+          },
         }
       }
-    }:{},include: { user: {
-      select: {
-        id: true,
-        name: true,
-        locations: true,
-        imageUrl: true
-      },
-    } }});
+    });
+
+    // فلترة حسب المسافة إذا تم توفير الإحداثيات
+    if (longitude && latitude) {
+      longitude = parseFloat(longitude);
+      latitude = parseFloat(latitude);
+
+      const workersWithDistance = workers.filter(worker => {
+        if (!worker.user.locations || worker.user.locations.length === 0) return false;
+
+        // حساب المسافة لكل موقع من مواقع العامل
+        const distances = worker.user.locations.map(location => {
+          const R = 6371; // نصف قطر الأرض بالكيلومتر
+          const dLat = (location.latitude - latitude) * Math.PI / 180;
+          const dLon = (location.longitude - longitude) * Math.PI / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(latitude * Math.PI / 180) * Math.cos(location.latitude * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distance = R * c;
+          return distance;
+        });
+
+        // إرجاع العامل إذا كان أي من مواقعه ضمن المسافة المطلوبة
+        return Math.min(...distances) <= maxDistance;
+      });
+
+      // إرسال تحديث للوحة التحكم
+      if (req.io) {
+        req.io.to('admin').emit('workersUpdated', workersWithDistance);
+      }
+
+      const message = await translate('Workers retrieved successfully', { to: lang });
+
+      if (lang === 'en') {
+        res.status(200).json({
+          status: true,
+          message,
+          code: 200,
+          data: workersWithDistance
+        });
+        return;
+      }
+
+      // ترجمة جميع العمال في وقت واحد
+      const translatedWorkers = await Promise.all(workersWithDistance.map(async (worker) => {
+        const [translatedTitle, translatedDesc, translatedSkills] = await Promise.all([
+          translate(worker.title, { to: lang }),
+          translate(worker.description, { to: lang }),
+          Promise.all(worker.skills.map(skill => translate(skill, { to: lang })))
+        ]);
+
+        return {
+          ...worker,
+          title: translatedTitle,
+          description: translatedDesc,
+          skills: translatedSkills
+        };
+      }));
+
+      res.status(200).json({
+        status: true,
+        message,
+        code: 200,
+        data: translatedWorkers
+      });
+      return;
+    }
 
     // إرسال تحديث للوحة التحكم
     if (req.io) {
@@ -70,19 +145,19 @@ const getAllWorkers = async (req, res) => {
 const createWorker = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
-    const { 
-      userId, 
+    const {
+      userId,
       title,
       description,
       profileImage,
       hourlyRate,
-      skills ,
+      skills,
       WorkerCategory
     } = req.body;
     const currentDate = new Date();
     const startMonth = startOfMonth(currentDate); // أول يوم في الشهر
     const endMonth = endOfMonth(currentDate); // آخر يوم في الشهر
-  
+
     const schedules = [];
     for (let day = startMonth; day <= endMonth; day = addDays(day, 1)) {
       schedules.push({
@@ -103,7 +178,7 @@ const createWorker = async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId,role:"worker" },
+      where: { id: userId, role: "worker" },
     });
 
     if (!user) {
@@ -130,7 +205,7 @@ const createWorker = async (req, res) => {
         isFavorite: false,
         jobSuccessRate: 0,
         totalEarned: 0,
-        WorkerCategory:{
+        WorkerCategory: {
           create: WorkerCategory.map(category => ({
             categoryId: category.categoryId
           }))
@@ -161,7 +236,7 @@ const createWorker = async (req, res) => {
     }
 
     const message = await translate('Worker created successfully', { to: lang });
-    
+
     if (lang === 'en') {
       res.status(201).json({
         status: true,
@@ -203,16 +278,16 @@ const getWorkerById = async (req, res) => {
     const { id } = req.params;
     const worker = await prisma.worker.findUnique({
       where: { id },
-      include: { user:true,WorkerCategory:true }
+      include: { user: true, WorkerCategory: true }
     });
 
-    if (!worker) { 
+    if (!worker) {
       const message = await translate('Worker not found', { to: lang });
-      return res.status(404).json({ 
-        status: false, 
-        message, 
-        code: 404, 
-        data: null 
+      return res.status(404).json({
+        status: false,
+        message,
+        code: 404,
+        data: null
       });
     }
 
@@ -257,9 +332,9 @@ const updateWorker = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { id } = req.params;
-    const { title, description, skills, hourlyRate, isVerified,totalJobsDone,about,
-      experiences ,
-      reviews ,userId,WorkerCategory, isAvailable } = req.body;
+    const { title, description, skills, hourlyRate, isVerified, totalJobsDone, about,
+      experiences,
+      reviews, userId, WorkerCategory, isAvailable } = req.body;
 
     if (!id) {
       const message = await translate('id is required', { to: lang });
@@ -275,12 +350,12 @@ const updateWorker = async (req, res) => {
       return res.status(404).json({ status: false, message, code: 404, data: null });
     }
     if (experiences) {
-      let experienceTranslated=await Promise.all(experiences.map(e=>{
-        let [title,description,company,duration]= Promise.all([
+      let experienceTranslated = await Promise.all(experiences.map(e => {
+        let [title, description, company, duration] = Promise.all([
           translate(e.title, { to: "en" }),
           translate(e.description, { to: "en" }),
           translate(e.company, { to: "en" }),
-          translate(e.duration,{to:"en"} )
+          translate(e.duration, { to: "en" })
         ])
         return {
           workerId: id,
@@ -294,32 +369,32 @@ const updateWorker = async (req, res) => {
       await prisma.workExperience.createMany({
         data: experienceTranslated
       })
-      
+
     }
     if (reviews && userId) {
       let user = await prisma.user.findUnique({
-        where:{id:userId,role:"user"}
+        where: { id: userId, role: "user" }
       })
       if (!user) {
         const message = await translate('User not found', { to: lang });
         return res.status(404).json({ status: false, message, code: 404, data: null });
-        
+
       }
-      let reviewTranslated=await Promise.all(reviews.map(r=>{
-        let [comment]= Promise.all([
-          translate(r.comment , { to: "en" }),
+      let reviewTranslated = await Promise.all(reviews.map(r => {
+        let [comment] = Promise.all([
+          translate(r.comment, { to: "en" }),
         ])
         return {
           ...r,
           comment,
-          workerId:id,
+          workerId: id,
           userId,
         }
       }))
       await prisma.review.createMany({
         data: reviewTranslated
       })
-      
+
     }
     // ترجمة جميع الحقول المحدثة في وقت واحد
     if (WorkerCategory) {
@@ -330,8 +405,8 @@ const updateWorker = async (req, res) => {
             workerId: id,
           },
         });
-        
-        if(!workerCategory){
+
+        if (!workerCategory) {
           await prisma.workerCategory.create({
             data: {
               categoryId: category.categoryId,
