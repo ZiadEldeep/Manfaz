@@ -1530,6 +1530,7 @@ const getStoresAllOffers = async (req, res) => {
           },
           isActive: true
         },
+        take,
         include: {
           store: {
             include: {
@@ -1570,7 +1571,11 @@ const getStoresAllOffers = async (req, res) => {
       },
       take,
       include: {
-        store: true
+        store: {
+          include: {
+            locations: true
+          }
+        }
       }
     });
 
@@ -1596,6 +1601,7 @@ const getStoresAllOffers = async (req, res) => {
       data: translatedOffers
     });
   } catch (error) {
+    console.log(error);
     const message = await translate(error.message, { to: lang });
     res.status(500).json({ status: false, message, code: 500, data: null });
   }
