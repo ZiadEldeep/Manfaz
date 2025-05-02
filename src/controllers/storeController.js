@@ -1480,6 +1480,125 @@ const deleteCoupon = async (req, res) => {
   }
 };
 
+const getStoresAllOffers = async (req, res) => {
+  const lang = req.query.lang || 'en';
+  let longitude = parseFloat(req.query.longitude);
+  let latitude = parseFloat(req.query.latitude);
+  let maxDistance = 10; // 10 كيلومتر
+
+  try {
+    // فلترة حسب المسافة إذا تم توفير الإحداثيات
+    if (longitude && latitude) {
+      // الحصول على جميع المتاجر مع مواقعها
+      const stores = await prisma.store.findMany({
+        include: {
+          locations: true
+        }
+      });
+
+      // حساب المسافة لكل متجر
+      const storesWithDistance = stores.filter(store => {
+        if (!store.locations || store.locations.length === 0) return false;
+
+        // حساب المسافة لكل موقع من مواقع المتجر
+        const distances = store.locations.map(location => {
+          const R = 6371; // نصف قطر الأرض بالكيلومتر
+          const dLat = (location.latitude - latitude) * Math.PI / 180;
+          const dLon = (location.longitude - longitude) * Math.PI / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(latitude * Math.PI / 180) * Math.cos(location.latitude * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distance = R * c;
+          return distance;
+        });
+
+        // إرجاع المتجر إذا كان أي من مواقعه ضمن المسافة المطلوبة
+        return Math.min(...distances) <= maxDistance;
+      });
+
+      // الحصول على معرفات المتاجر التي تقع ضمن المسافة المطلوبة
+      const storeIds = storesWithDistance.map(store => store.id);
+
+      // الحصول على العروض للمتاجر التي تقع ضمن المسافة المطلوبة
+      const offers = await prisma.storeOffer.findMany({
+        where: {
+          storeId: {
+            in: storeIds
+          },
+          isActive: true
+        },
+        include: {
+          store: {
+            include: {
+              locations: true
+            }
+          }
+        }
+      });
+
+      // ترجمة العروض
+      const translatedOffers = await Promise.all(offers.map(async (offer) => {
+        const [translatedName, translatedDescription] = await Promise.all([
+          translate(offer.name, { to: lang }),
+          translate(offer.description, { to: lang })
+        ]);
+
+        return {
+          ...offer,
+          name: translatedName,
+          description: translatedDescription
+        };
+      }));
+
+      const message = await translate('Offers retrieved successfully', { to: lang });
+      res.status(200).json({
+        status: true,
+        message,
+        code: 200,
+        data: translatedOffers
+      });
+      return;
+    }
+
+    // إذا لم يتم توفير الإحداثيات، إرجاع جميع العروض النشطة
+    const offers = await prisma.storeOffer.findMany({
+      where: {
+        isActive: true
+      },
+      include: {
+        store: true
+      }
+    });
+
+    // ترجمة العروض
+    const translatedOffers = await Promise.all(offers.map(async (offer) => {
+      const [translatedName, translatedDescription] = await Promise.all([
+        translate(offer.name, { to: lang }),
+        translate(offer.description, { to: lang })
+      ]);
+
+      return {
+        ...offer,
+        name: translatedName,
+        description: translatedDescription
+      };
+    }));
+
+    const message = await translate('Offers retrieved successfully', { to: lang });
+    res.status(200).json({
+      status: true,
+      message,
+      code: 200,
+      data: translatedOffers
+    });
+  } catch (error) {
+    const message = await translate(error.message, { to: lang });
+    res.status(500).json({ status: false, message, code: 500, data: null });
+  }
+};
+
 module.exports = {
   getAllStores,
   getStoreById,
@@ -1505,5 +1624,6 @@ module.exports = {
   createCoupon,
   updateCoupon,
   deleteCoupon,
-  validateCoupon
+  validateCoupon,
+  getStoresAllOffers
 }; 

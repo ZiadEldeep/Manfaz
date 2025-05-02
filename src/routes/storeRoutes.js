@@ -25,7 +25,8 @@ const {
   updateCoupon,
   deleteCoupon,
   validateCoupon,
-  updateStoreProduct
+  updateStoreProduct,
+  getStoresAllOffers
 } = require('../controllers/storeController');
 
 const router = express.Router();
@@ -51,6 +52,7 @@ router.put('/:storeId/products/:id', updateStoreProduct);
 
 // عروض المتجر
 router.get('/:storeId/offers', getStoreOffers);
+router.get('/offers', getStoresAllOffers);
 router.post('/:storeId/offers', protect, createStoreOffer);
 
 // فروع المتجر
