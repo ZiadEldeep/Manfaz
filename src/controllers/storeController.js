@@ -1484,6 +1484,7 @@ const getStoresAllOffers = async (req, res) => {
   const lang = req.query.lang || 'en';
   let longitude = parseFloat(req.query.longitude);
   let latitude = parseFloat(req.query.latitude);
+  let take = parseInt(req.query.take) || 10;
   let maxDistance = 10; // 10 كيلومتر
 
   try {
@@ -1567,6 +1568,7 @@ const getStoresAllOffers = async (req, res) => {
       where: {
         isActive: true
       },
+      take,
       include: {
         store: true
       }
