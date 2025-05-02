@@ -52,7 +52,7 @@ router.put('/:storeId/products/:id', updateStoreProduct);
 
 // عروض المتجر
 router.get('/:storeId/offers', getStoreOffers);
-// router.get('/offers', getStoresAllOffers);
+router.get('/offers/all', getStoresAllOffers);
 router.post('/:storeId/offers', protect, createStoreOffer);
 
 // فروع المتجر
