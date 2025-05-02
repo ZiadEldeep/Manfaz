@@ -32,12 +32,14 @@ const getAllWorkers = async (req, res) => {
     if (longitude && latitude) {
       longitude = parseFloat(longitude);
       latitude = parseFloat(latitude);
+      console.log(longitude, latitude, 7890876789);
 
       const workersWithDistance = workers.filter(worker => {
         if (!worker.user.locations || worker.user.locations.length === 0) return false;
 
         // حساب المسافة لكل موقع من مواقع العامل
         const distances = worker.user.locations.map(location => {
+          console.log(location);
           const R = 6371; // نصف قطر الأرض بالكيلومتر
           const dLat = (location.latitude - latitude) * Math.PI / 180;
           const dLon = (location.longitude - longitude) * Math.PI / 180;

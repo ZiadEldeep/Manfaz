@@ -734,40 +734,87 @@ const getAllStoreCategories = async (req, res) => {
   let offset = (page - 1) * limit;
   let search = req.query.search || '';
   let categoryId = req.query.categoryId || '';
+  let longitude = parseFloat(req.query.longitude);
+  let latitude = parseFloat(req.query.latitude);
+  let maxDistance = 10; // 10 كيلومتر
+
   try {
     let searchTranslated = search ? await translate(search, { to: lang }) : '';
     let searchQuery = search ? { OR: [{ name: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }, { description: { contains: searchTranslated, mode: Prisma.QueryMode.insensitive } }] } : {};
-    const categories = await prisma.storeCategory.findMany({
-      where: {
-        ...searchQuery, ...(categoryId && categoryId !== "undefined" ? {
-          store: {
+
+    // فلترة حسب المسافة إذا تم توفير الإحداثيات
+    if (longitude && latitude) {
+      const stores = await prisma.store.findMany({
+        where: {
+          ...searchQuery,
+          ...(categoryId && categoryId !== "undefined" ? {
             categoryId
+          } : {})
+        },
+        include: {
+          locations: true
+        }
+      });
+
+      // حساب المسافة لكل متجر
+      const storesWithDistance = stores.filter(store => {
+        if (!store.locations || store.locations.length === 0) return false;
+
+        // حساب المسافة لكل موقع من مواقع المتجر
+        const distances = store.locations.map(location => {
+          const R = 6371; // نصف قطر الأرض بالكيلومتر
+          const dLat = (location.latitude - latitude) * Math.PI / 180;
+          const dLon = (location.longitude - longitude) * Math.PI / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(latitude * Math.PI / 180) * Math.cos(location.latitude * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distance = R * c;
+          return distance;
+        });
+
+        // إرجاع المتجر إذا كان أي من مواقعه ضمن المسافة المطلوبة
+        return Math.min(...distances) <= maxDistance;
+      });
+
+      // الحصول على تصنيفات المتاجر التي تقع ضمن المسافة المطلوبة
+      const storeIds = storesWithDistance.map(store => store.id);
+      const categories = await prisma.storeCategory.findMany({
+        where: {
+          storeId: {
+            in: storeIds
           }
-        } : {})
-      },
-      skip: offset,
-      take: +limit
-    });
-    let [translatedCategories, message] = await Promise.all([
-      Promise.all(categories.map(async (category) => {
-        let [translatedName, translatedDescription] = await Promise.all([
-          translate(category.name, { to: lang }),
-          translate(category.description, { to: lang })
-        ]);
-        return {
-          ...category,
-          name: translatedName,
-          description: translatedDescription
-        };
-      })),
-      translate('Categories retrieved successfully', { to: lang })
-    ]);
-    res.status(200).json({
-      status: true,
-      message,
-      code: 200,
-      data: translatedCategories
-    });
+        },
+        skip: offset,
+        take: +limit
+      });
+
+      let [translatedCategories, message] = await Promise.all([
+        Promise.all(categories.map(async (category) => {
+          let [translatedName, translatedDescription] = await Promise.all([
+            translate(category.name, { to: lang }),
+            translate(category.description, { to: lang })
+          ]);
+          return {
+            ...category,
+            name: translatedName,
+            description: translatedDescription
+          };
+        })),
+        translate('Categories retrieved successfully', { to: lang })
+      ]);
+
+      res.status(200).json({
+        status: true,
+        message,
+        code: 200,
+        data: translatedCategories
+      });
+      return;
+    }
+
+    // ... existing code ...
   } catch (error) {
     console.log(error);
     const message = await translate(error.message, { to: lang });
@@ -878,7 +925,46 @@ const getStoreOffers = async (req, res) => {
   const lang = req.query.lang || 'en';
   try {
     const { storeId } = req.params;
-    const { type, active } = req.query;
+    const { type, active, longitude, latitude } = req.query;
+    let maxDistance = 10; // 10 كيلومتر
+
+    // فلترة حسب المسافة إذا تم توفير الإحداثيات
+    if (longitude && latitude) {
+      longitude = parseFloat(longitude);
+      latitude = parseFloat(latitude);
+
+      const store = await prisma.store.findUnique({
+        where: { id: storeId },
+        include: {
+          locations: true
+        }
+      });
+
+      if (!store) {
+        const message = await translate('Store not found', { to: lang });
+        return res.status(404).json({ status: false, message, code: 404, data: null });
+      }
+
+      // حساب المسافة لكل موقع من مواقع المتجر
+      const distances = store.locations.map(location => {
+        const R = 6371; // نصف قطر الأرض بالكيلومتر
+        const dLat = (location.latitude - latitude) * Math.PI / 180;
+        const dLon = (location.longitude - longitude) * Math.PI / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(latitude * Math.PI / 180) * Math.cos(location.latitude * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+        return distance;
+      });
+
+      // التحقق من أن المتجر يقع ضمن المسافة المطلوبة
+      if (Math.min(...distances) > maxDistance) {
+        const message = await translate('No offers found within the specified distance', { to: lang });
+        return res.status(200).json({ status: true, message, code: 200, data: [] });
+      }
+    }
 
     const where = {
       storeId,
