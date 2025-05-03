@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/app.js",
-    "prisma:all": "npx prisma generate && npx prisma db push"
+    "p:al": "npx prisma generate && npx prisma db push",
+    "p:st": "npx prisma studio"
   },
   "keywords": [],
   "author": "",

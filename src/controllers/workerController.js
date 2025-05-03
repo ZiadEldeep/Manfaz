@@ -32,7 +32,6 @@ const getAllWorkers = async (req, res) => {
     if (longitude && latitude) {
       longitude = parseFloat(longitude);
       latitude = parseFloat(latitude);
-      console.log(longitude, latitude, 7890876789);
 
       const workersWithDistance = workers.filter(worker => {
         if (!worker.user.locations || worker.user.locations.length === 0) return false;

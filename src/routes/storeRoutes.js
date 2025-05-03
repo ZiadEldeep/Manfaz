@@ -26,7 +26,10 @@ const {
   deleteCoupon,
   validateCoupon,
   updateStoreProduct,
-  getStoresAllOffers
+  getStoresAllOffers,
+  getStoreOfferById,
+  updateStoreOffer,
+  deleteStoreOffer
 } = require('../controllers/storeController');
 
 const router = express.Router();
@@ -53,7 +56,10 @@ router.put('/:storeId/products/:id', updateStoreProduct);
 // عروض المتجر
 router.get('/:storeId/offers', getStoreOffers);
 router.get('/offers/all', getStoresAllOffers);
-router.post('/:storeId/offers', protect, createStoreOffer);
+router.post('/:storeId/offers', createStoreOffer);
+router.get('/offers/one/:id', getStoreOfferById);
+router.put('/:storeId/offers/:id', updateStoreOffer);
+router.delete('/:storeId/offers/:id', deleteStoreOffer);
 
 // فروع المتجر
 router.get('/:storeId/locations', getStoreLocations);
