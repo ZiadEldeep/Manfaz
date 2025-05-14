@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const tapService = require('../payments/tapService');
+// const tapService = require('../payments/tapService');
 const paypalService = require('../payments/paypalService');
+const paymobService = require('../payments/paymobService');
 const axios = require('axios');
 const authenticateToken = require('../middleware/authMiddleware');
 // <-------payment------->
@@ -139,44 +140,44 @@ router.post("/", async (req, res) => {
             .json({ error: "Internal server error", details: error.message });
     }
 });
-// إنشاء عملية دفع جديدة
-router.post('/create-payment', authenticateToken, async (req, res) => {
-    try {
-        const paymentData = {
-            amount: req.body.amount,
-            description: req.body.description,
-            customerName: req.body.customerName,
-            customerEmail: req.body.customerEmail,
-            customerPhone: req.body.customerPhone,
-            sourceId: req.body.sourceId,
-            redirectUrl: req.body.redirectUrl,
-            transactionId: req.body.transactionId,
-            orderId: req.body.orderId
-        };
+// // إنشاء عملية دفع جديدة
+// router.post('/create-payment', authenticateToken, async (req, res) => {
+//     try {
+//         const paymentData = {
+//             amount: req.body.amount,
+//             description: req.body.description,
+//             customerName: req.body.customerName,
+//             customerEmail: req.body.customerEmail,
+//             customerPhone: req.body.customerPhone,
+//             sourceId: req.body.sourceId,
+//             redirectUrl: req.body.redirectUrl,
+//             transactionId: req.body.transactionId,
+//             orderId: req.body.orderId
+//         };
 
-        const result = await tapService.createPayment(paymentData);
+//         const result = await tapService.createPayment(paymentData);
 
-        if (result.success) {
-            res.json({
-                status: true,
-                message: 'تم إنشاء عملية الدفع بنجاح',
-                data: result.data
-            });
-        } else {
-            res.status(400).json({
-                status: false,
-                message: 'فشل في إنشاء عملية الدفع',
-                error: result.error
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: 'حدث خطأ في الخادم',
-            error: error.message
-        });
-    }
-});
+//         if (result.success) {
+//             res.json({
+//                 status: true,
+//                 message: 'تم إنشاء عملية الدفع بنجاح',
+//                 data: result.data
+//             });
+//         } else {
+//             res.status(400).json({
+//                 status: false,
+//                 message: 'فشل في إنشاء عملية الدفع',
+//                 error: result.error
+//             });
+//         }
+//     } catch (error) {
+//         res.status(500).json({
+//             status: false,
+//             message: 'حدث خطأ في الخادم',
+//             error: error.message
+//         });
+//     }
+// });
 router.post("/webhook", async (req, res) => {
     const body = req.body;
     try {
@@ -224,58 +225,58 @@ router.post("/webhook", async (req, res) => {
 })
 
 // استرجاع معلومات عملية دفع
-router.get('/payment/:chargeId', authenticateToken, async (req, res) => {
-    try {
-        const result = await tapService.retrievePayment(req.params.chargeId);
+// router.get('/payment/:chargeId', authenticateToken, async (req, res) => {
+//     try {
+//         const result = await tapService.retrievePayment(req.params.chargeId);
 
-        if (result.success) {
-            res.json({
-                status: true,
-                message: 'تم استرجاع معلومات عملية الدفع بنجاح',
-                data: result.data
-            });
-        } else {
-            res.status(400).json({
-                status: false,
-                message: 'فشل في استرجاع معلومات عملية الدفع',
-                error: result.error
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: 'حدث خطأ في الخادم',
-            error: error.message
-        });
-    }
-});
+//         if (result.success) {
+//             res.json({
+//                 status: true,
+//                 message: 'تم استرجاع معلومات عملية الدفع بنجاح',
+//                 data: result.data
+//             });
+//         } else {
+//             res.status(400).json({
+//                 status: false,
+//                 message: 'فشل في استرجاع معلومات عملية الدفع',
+//                 error: result.error
+//             });
+//         }
+//     } catch (error) {
+//         res.status(500).json({
+//             status: false,
+//             message: 'حدث خطأ في الخادم',
+//             error: error.message
+//         });
+//     }
+// });
 
 // استرداد المبلغ
-router.post('/refund/:chargeId', authenticateToken, async (req, res) => {
-    try {
-        const result = await tapService.refundPayment(req.params.chargeId, req.body.amount);
+// router.post('/refund/:chargeId', authenticateToken, async (req, res) => {
+//     try {
+//         const result = await tapService.refundPayment(req.params.chargeId, req.body.amount);
 
-        if (result.success) {
-            res.json({
-                status: true,
-                message: 'تم استرداد المبلغ بنجاح',
-                data: result.data
-            });
-        } else {
-            res.status(400).json({
-                status: false,
-                message: 'فشل في استرداد المبلغ',
-                error: result.error
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: 'حدث خطأ في الخادم',
-            error: error.message
-        });
-    }
-});
+//         if (result.success) {
+//             res.json({
+//                 status: true,
+//                 message: 'تم استرداد المبلغ بنجاح',
+//                 data: result.data
+//             });
+//         } else {
+//             res.status(400).json({
+//                 status: false,
+//                 message: 'فشل في استرداد المبلغ',
+//                 error: result.error
+//             });
+//         }
+//     } catch (error) {
+//         res.status(500).json({
+//             status: false,
+//             message: 'حدث خطأ في الخادم',
+//             error: error.message
+//         });
+//     }
+// });
 
 // شحن رصيد للمحفظة
 router.post('/wallet/deposit', authenticateToken, async (req, res) => {
@@ -292,7 +293,7 @@ router.post('/wallet/deposit', authenticateToken, async (req, res) => {
             });
         }
 
-        const result = await tapService.createWalletDeposit(userId, amount);
+        const result = await paymobService.createWalletDeposit(userId, amount);
 
         if (result.success) {
             res.json({
@@ -366,7 +367,7 @@ router.post('/wallet/callback', async (req, res) => {
     try {
         const { charge_id, status } = req.body;
 
-        const result = await tapService.handlePaymentCallback(charge_id, status);
+        const result = await paymobService.handlePaymentCallback(charge_id, status);
 
         if (result.success) {
             res.json({
@@ -417,7 +418,7 @@ router.post('/payout', authenticateToken, async (req, res) => {
             });
         }
 
-        const result = await tapService.createPayout(userId, amount, bankDetails);
+        const result = await paymobService.createPayout(userId, amount, bankDetails);
 
         if (result.success) {
             res.json({
@@ -445,66 +446,66 @@ router.post('/payout', authenticateToken, async (req, res) => {
 });
 
 // التحقق من حالة عملية السحب
-router.get('/payout/:payoutId', authenticateToken, async (req, res) => {
-    try {
-        const result = await tapService.getPayoutStatus(req.params.payoutId);
+// router.get('/payout/:payoutId', authenticateToken, async (req, res) => {
+//     try {
+//         const result = await paymobService.getPayoutStatus(req.params.payoutId);
 
-        if (result.success) {
-            res.json({
-                status: true,
-                message: 'تم استرجاع حالة عملية السحب بنجاح',
-                code: 200,
-                data: result.data
-            });
-        } else {
-            res.status(400).json({
-                status: false,
-                message: 'فشل في استرجاع حالة عملية السحب',
-                code: 400,
-                error: result.error
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: 'حدث خطأ في الخادم',
-            code: 500,
-            error: error.message
-        });
-    }
-});
+//         if (result.success) {
+//             res.json({
+//                 status: true,
+//                 message: 'تم استرجاع حالة عملية السحب بنجاح',
+//                 code: 200,
+//                 data: result.data
+//             });
+//         } else {
+//             res.status(400).json({
+//                 status: false,
+//                 message: 'فشل في استرجاع حالة عملية السحب',
+//                 code: 400,
+//                 error: result.error
+//             });
+//         }
+//     } catch (error) {
+//         res.status(500).json({
+//             status: false,
+//             message: 'حدث خطأ في الخادم',
+//             code: 500,
+//             error: error.message
+//         });
+//     }
+// });
 
 // معالجة استجابة Tap لعملية السحب
-router.post('/payout/callback', async (req, res) => {
-    try {
-        const { payout_id, status } = req.body;
+// router.post('/payout/callback', async (req, res) => {
+//     try {
+//         const { payout_id, status } = req.body;
 
-        const result = await tapService.handlePayoutCallback(payout_id, status);
+//         const result = await paymobService.handlePayoutCallback(payout_id, status);
 
-        if (result.success) {
-            res.json({
-                status: true,
-                message: 'تم معالجة عملية السحب بنجاح',
-                code: 200,
-                data: result.data
-            });
-        } else {
-            res.status(400).json({
-                status: false,
-                message: 'فشل في معالجة عملية السحب',
-                code: 400,
-                error: result.error
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            status: false,
-            message: 'حدث خطأ في الخادم',
-            code: 500,
-            error: error.message
-        });
-    }
-});
+//         if (result.success) {
+//             res.json({
+//                 status: true,
+//                 message: 'تم معالجة عملية السحب بنجاح',
+//                 code: 200,
+//                 data: result.data
+//             });
+//         } else {
+//             res.status(400).json({
+//                 status: false,
+//                 message: 'فشل في معالجة عملية السحب',
+//                 code: 400,
+//                 error: result.error
+//             });
+//         }
+//     } catch (error) {
+//         res.status(500).json({
+//             status: false,
+//             message: 'حدث خطأ في الخادم',
+//             code: 500,
+//             error: error.message
+//         });
+//     }
+// });
 
 // إنشاء عملية سحب للعامل
 router.post('/worker/payout', authenticateToken, async (req, res) => {

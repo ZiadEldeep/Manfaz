@@ -28,74 +28,74 @@ const getAllWorkers = async (req, res) => {
       }
     });
 
-    // فلترة حسب المسافة إذا تم توفير الإحداثيات
-    if (longitude && latitude) {
-      longitude = parseFloat(longitude);
-      latitude = parseFloat(latitude);
+    // // فلترة حسب المسافة إذا تم توفير الإحداثيات
+    // if (longitude && latitude) {
+    //   longitude = parseFloat(longitude);
+    //   latitude = parseFloat(latitude);
 
-      const workersWithDistance = workers.filter(worker => {
-        if (!worker.user.locations || worker.user.locations.length === 0) return false;
+    //   const workersWithDistance = workers.filter(worker => {
+    //     if (!worker.user.locations || worker.user.locations.length === 0) return false;
 
-        // حساب المسافة لكل موقع من مواقع العامل
-        const distances = worker.user.locations.map(location => {
-          console.log(location);
-          const R = 6371; // نصف قطر الأرض بالكيلومتر
-          const dLat = (location.latitude - latitude) * Math.PI / 180;
-          const dLon = (location.longitude - longitude) * Math.PI / 180;
-          const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(latitude * Math.PI / 180) * Math.cos(location.latitude * Math.PI / 180) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-          const distance = R * c;
-          return distance;
-        });
+    //     // حساب المسافة لكل موقع من مواقع العامل
+    //     const distances = worker.user.locations.map(location => {
+    //       console.log(location);
+    //       const R = 6371; // نصف قطر الأرض بالكيلومتر
+    //       const dLat = (location.latitude - latitude) * Math.PI / 180;
+    //       const dLon = (location.longitude - longitude) * Math.PI / 180;
+    //       const a =
+    //         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    //         Math.cos(latitude * Math.PI / 180) * Math.cos(location.latitude * Math.PI / 180) *
+    //         Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    //       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    //       const distance = R * c;
+    //       return distance;
+    //     });
 
-        // إرجاع العامل إذا كان أي من مواقعه ضمن المسافة المطلوبة
-        return Math.min(...distances) <= maxDistance;
-      });
+    //     // إرجاع العامل إذا كان أي من مواقعه ضمن المسافة المطلوبة
+    //     return Math.min(...distances) <= maxDistance;
+    //   });
 
-      // إرسال تحديث للوحة التحكم
-      if (req.io) {
-        req.io.to('admin').emit('workersUpdated', workersWithDistance);
-      }
+    //   // إرسال تحديث للوحة التحكم
+    //   if (req.io) {
+    //     req.io.to('admin').emit('workersUpdated', workersWithDistance);
+    //   }
 
-      const message = await translate('Workers retrieved successfully', { to: lang });
+    //   const message = await translate('Workers retrieved successfully', { to: lang });
 
-      if (lang === 'en') {
-        res.status(200).json({
-          status: true,
-          message,
-          code: 200,
-          data: workersWithDistance
-        });
-        return;
-      }
+    //   if (lang === 'en') {
+    //     res.status(200).json({
+    //       status: true,
+    //       message,
+    //       code: 200,
+    //       data: workersWithDistance
+    //     });
+    //     return;
+    //   }
 
-      // ترجمة جميع العمال في وقت واحد
-      const translatedWorkers = await Promise.all(workersWithDistance.map(async (worker) => {
-        const [translatedTitle, translatedDesc, translatedSkills] = await Promise.all([
-          translate(worker.title, { to: lang }),
-          translate(worker.description, { to: lang }),
-          Promise.all(worker.skills.map(skill => translate(skill, { to: lang })))
-        ]);
+    //   // ترجمة جميع العمال في وقت واحد
+    //   const translatedWorkers = await Promise.all(workersWithDistance.map(async (worker) => {
+    //     const [translatedTitle, translatedDesc, translatedSkills] = await Promise.all([
+    //       translate(worker.title, { to: lang }),
+    //       translate(worker.description, { to: lang }),
+    //       Promise.all(worker.skills.map(skill => translate(skill, { to: lang })))
+    //     ]);
 
-        return {
-          ...worker,
-          title: translatedTitle,
-          description: translatedDesc,
-          skills: translatedSkills
-        };
-      }));
+    //     return {
+    //       ...worker,
+    //       title: translatedTitle,
+    //       description: translatedDesc,
+    //       skills: translatedSkills
+    //     };
+    //   }));
 
-      res.status(200).json({
-        status: true,
-        message,
-        code: 200,
-        data: translatedWorkers
-      });
-      return;
-    }
+    //   res.status(200).json({
+    //     status: true,
+    //     message,
+    //     code: 200,
+    //     data: translatedWorkers
+    //   });
+    //   return;
+    // }
 
     // إرسال تحديث للوحة التحكم
     if (req.io) {
